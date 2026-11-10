@@ -1,0 +1,769 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Harel Hackathon Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Four-day hackathon board for Harel: spec and environment, verifier, training loop, factory governance, AuditKIT eval and demo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky tab bar; Board is a four-column kanban, every other tab is one reading page generated from the same ticket data.
+   One look by choice: olive on off-white, status colors separate from the accent. */
+:root{
+  --bg:#f5f4ee; --surface:#fbfbf7; --sunk:#ecebe2; --text:#23261c; --muted:#6a6d5d; --faint:#8f9180; --line:#dddcd0; --line-strong:#c9c8b8;
+  --accent:#55652b; --accent-ink:#3f4c1d; --accent-soft:#e5e8d4;
+  --todo:#8f9180; --doing:#3d6275; --doing-soft:#dfe8ec; --review:#6b5079; --review-soft:#ebe3ee; --done:#4b6a2e; --done-soft:#e1e9d3;
+  --warn:#87661c; --warn-soft:#f0e8d2; --block:#9a402f; --block-soft:#f2e0da;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+:root,:root[data-theme="dark"]{color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+a{color:var(--accent-ink)}
+code{font:12.5px/1.4 var(--mono);background:var(--sunk);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+p{margin:0 0 12px;max-width:72ch}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1180px;margin:0 auto;padding-inline:16px;display:flex;align-items:center;gap:18px}
+.brand{flex:none;display:flex;align-items:center;gap:8px;font:500 16px/1 var(--display);padding-block:14px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.brand .sub{color:var(--faint);font:400 12.5px/1 var(--sans)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1}
+.tabs::-webkit-scrollbar{display:none}
+.tabs a{flex:none;text-decoration:none;color:var(--muted);font:500 13.5px/1 var(--sans);padding:15px 10px 13px;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs a:hover{color:var(--text)}
+.tabs a.on{color:var(--accent-ink);border-bottom-color:var(--accent)}
+.save{flex:none;font:400 12px/1 var(--mono);color:var(--faint)}
+@media (max-width:640px){.save{display:none}}
+
+main{max-width:1180px;margin:0 auto;padding-block:40px 96px;padding-inline:16px}
+.page[hidden]{display:none}
+.kicker{font:500 12px/1.4 var(--mono);color:var(--accent)}
+h1{font-family:var(--display);font-size:38px;line-height:1.1;margin:12px 0 12px;letter-spacing:-.02em;font-weight:500;text-wrap:balance;max-width:26ch}
+h2{font-family:var(--display);font-size:22px;font-weight:500;letter-spacing:-.01em;margin:44px 0 12px;text-wrap:balance}
+h3{font-size:13px;font-weight:600;margin:22px 0 8px}
+.lede{font-family:var(--display);font-size:18px;line-height:1.55;color:var(--muted);max-width:68ch}
+.small{font-size:13px;color:var(--muted)}
+@media (max-width:640px){h1{font-size:30px}}
+
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.chip{display:inline-flex;align-items:center;gap:5px;font:500 11.5px/1 var(--sans);padding:4px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.75}
+.chip.todo{background:var(--sunk);color:var(--muted)}
+.chip.doing{background:var(--doing-soft);color:var(--doing)}
+.chip.review{background:var(--review-soft);color:var(--review)}
+.chip.done{background:var(--done-soft);color:var(--done)}
+.chip.blocked{background:var(--block-soft);color:var(--block)}
+.chip.decision{background:var(--warn-soft);color:var(--warn)}
+.chip.plain::before{display:none}
+.callout{background:var(--accent-soft);border-radius:12px;padding:14px 18px;margin:20px 0;max-width:860px}
+.callout.warn{background:var(--warn-soft)}
+.callout strong{color:var(--accent-ink)}
+.callout.warn strong{color:var(--warn)}
+.callout p:last-child{margin:0}
+
+/* summary */
+.sum{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:16px;margin:24px 0 20px}
+@media (max-width:860px){.sum{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.big{font:500 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.stack{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--sunk);margin:12px 0 8px}
+.stack span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.ws-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ws-chip{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ws-chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.ws-chip b{font:500 11.5px/1 var(--mono);color:var(--muted)}
+.ws-chip .nm{display:block;font-size:13px;font-weight:600;line-height:1.25;margin:3px 0 6px}
+.mini{height:4px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.mini span{display:block;height:100%;background:var(--done)}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.filters input{flex:1 1 220px;min-width:0}
+.filters .count{margin-left:auto;font-size:13px;color:var(--faint)}
+
+/* kanban */
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:1000px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.board{grid-template-columns:1fr}}
+.col{background:var(--sunk);border-radius:12px;padding:8px;min-height:110px;min-width:0}
+.col.drop{outline:2px dashed var(--accent);outline-offset:-2px}
+.col h3{display:flex;align-items:center;gap:8px;font:500 12px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;margin:6px 6px 10px;color:var(--muted)}
+.col h3 .dot{width:8px;height:8px;border-radius:50%}
+.col h3 .n{margin-left:auto;color:var(--faint)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 11px;margin-bottom:8px;cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.card .r1{display:flex;gap:8px;align-items:center;font:500 11.5px/1 var(--mono);color:var(--muted)}
+.card .r1 .id{color:var(--accent)}
+.card .r1 .sz{margin-left:auto;color:var(--faint)}
+.card .t{font-size:14px;font-weight:600;line-height:1.3;margin:6px 0 8px}
+.card .r2{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font:500 11px/1 var(--sans);padding:3px 6px;border-radius:4px;background:var(--sunk);color:var(--muted)}
+.tag.blocked{background:var(--block-soft);color:var(--block)}
+.tag.decision{background:var(--warn-soft);color:var(--warn)}
+.tag.parked{border:1px dashed var(--faint);background:none}
+.acbar{height:3px;background:var(--sunk);border-radius:2px;margin-top:8px;overflow:hidden}
+.acbar span{display:block;height:100%;background:var(--done)}
+.empty{font-size:13px;color:var(--faint);padding:8px 6px}
+
+/* tables on the page */
+.tablewrap{overflow-x:auto;margin:12px 0 18px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px 10px 0;border-bottom:1px solid var(--line)}
+th{font:500 11.5px/1.3 var(--mono);color:var(--faint);border-bottom:1px solid var(--line-strong);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:color-mix(in srgb,var(--sunk) 55%,transparent)}
+td.id{font:500 12.5px/1.5 var(--mono);color:var(--accent);white-space:nowrap}
+td.sm{font-size:13px;color:var(--muted)}
+td .ttl{font-weight:600}
+
+.cols3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:12px 0 18px}
+.cols3 .panel h4{margin:0 0 6px;font-size:15px}
+.cols3 .panel p,.cols3 .panel li{font-size:14px;color:var(--muted)}
+.cols3 .panel ul{margin:0;padding-left:18px}
+.phase{display:grid;grid-template-columns:70px minmax(0,1fr);gap:4px 16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase .k{font:500 13px/1.5 var(--mono);color:var(--accent)}
+.phase h4{margin:0 0 2px;font:500 18px/1.3 var(--display)}
+.phase .ex{font-size:13.5px;color:var(--muted)}
+.phase .pm{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media (max-width:560px){.phase{grid-template-columns:1fr}}
+ul.plain{margin:0 0 14px;padding-left:18px;max-width:76ch}
+ul.plain li{margin:6px 0}
+.dec{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:6px 14px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start;cursor:pointer}
+.dec:hover{background:color-mix(in srgb,var(--sunk) 55%,transparent)}
+.dec .id{font:500 12.5px/1.5 var(--mono);color:var(--accent)}
+.dec .q{font-weight:600}
+.dec .why{font-size:13.5px;color:var(--muted)}
+@media (max-width:560px){.dec{grid-template-columns:1fr}}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,24,12,.4);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--surface);z-index:41;overflow-y:auto;box-shadow:-8px 0 30px rgba(0,0,0,.16);padding:calc(env(safe-area-inset-top,0px) + 18px) 22px calc(env(safe-area-inset-bottom,0px) + 30px)}
+.drawer .close{float:right;font:600 13px var(--sans);background:var(--sunk);color:var(--text);border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+.drawer h2{font-size:23px;line-height:1.2;margin:6px 0 10px}
+.drawer h4{font:500 11.5px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin:22px 0 8px}
+.drawer p{font-size:14.5px}
+.pick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+@media (max-width:460px){.pick{grid-template-columns:repeat(2,1fr)}}
+.pick button{font:600 13px var(--sans);padding:8px 6px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer}
+.pick button[aria-pressed="true"][data-s="todo"]{background:var(--sunk);border-color:var(--todo)}
+.pick button[aria-pressed="true"][data-s="doing"]{background:var(--doing-soft);border-color:var(--doing);color:var(--doing)}
+.pick button[aria-pressed="true"][data-s="review"]{background:var(--review-soft);border-color:var(--review);color:var(--review)}
+.pick button[aria-pressed="true"][data-s="done"]{background:var(--done-soft);border-color:var(--done);color:var(--done)}
+.pick button:disabled{opacity:.55;cursor:not-allowed}
+.ac{padding:0;margin:0}
+.ac li{list-style:none;display:flex;gap:9px;align-items:flex-start;margin:0 0 8px;font-size:14.5px}
+.ac input{margin-top:5px;accent-color:var(--done);flex:none}
+.ac label{cursor:pointer}
+.field{width:100%;font:inherit;font-size:14px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea.field{min-height:90px;resize:vertical}
+.deps{display:flex;flex-wrap:wrap;gap:6px}
+.deps button{font:500 12px var(--mono);border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:6px;padding:3px 8px;cursor:pointer}
+.deps button.done{color:var(--done);border-color:var(--done)}
+
+/* overview diagrams */
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;margin:10px 0 6px}
+.fig svg{display:block;min-width:760px;width:100%;height:auto}
+.fig .bx{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+.fig .hl{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.fig .wn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.2}
+.fig .gt{fill:none;stroke:var(--line-strong);stroke-dasharray:4 3}
+.fig .t{font:600 13px var(--sans);fill:var(--text)}
+.fig .s{font:400 11px var(--sans);fill:var(--muted)}
+.fig .g{font:500 10.5px var(--mono);fill:var(--faint);letter-spacing:.04em}
+.fig .ar{fill:none;stroke:var(--faint);stroke-width:1.4}
+.fig .ar2{fill:none;stroke:var(--accent);stroke-width:1.6}
+.fig .ah{fill:var(--faint)}.fig .ah2{fill:var(--accent)}
+.fig .pb{fill:var(--sunk)}.fig .pf{fill:var(--done)}
+.fig .nd{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+.fig .nd-doing{fill:var(--doing-soft);stroke:var(--doing);stroke-width:1.5}
+.fig .nd-review{fill:var(--review-soft);stroke:var(--review);stroke-width:1.5}
+.fig .nd-done{fill:var(--done-soft);stroke:var(--done);stroke-width:1.5}
+.fig .nd-blocked{fill:var(--block-soft);stroke:var(--block);stroke-width:1.2}
+.cl{display:flex;flex-wrap:wrap;gap:4px}
+td.cl2{min-width:220px;font-size:13.5px}
+td.no2{min-width:200px;font-size:13px;color:var(--muted)}
+.def{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:12px 0 18px}
+.def .panel h4{margin:0 0 6px;font-size:15px}
+.def .panel p,.def .panel li{font-size:14px;color:var(--muted)}
+.def .panel ul{margin:0;padding-left:18px}
+.def .panel .stg{font:500 11.5px/1 var(--mono);color:var(--accent)}
+.tag.stg{background:var(--accent-soft);color:var(--accent-ink)}
+.cap{font-size:13px;color:var(--muted);max-width:80ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
+.stats .panel b{display:block;font:500 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stats .panel span{font-size:12px;color:var(--muted)}
+.may{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:10px 0 18px}
+.may .panel h4{margin:0 0 8px;font-size:15px}
+.may .panel ul{margin:0;padding-left:18px;font-size:14px}
+.may .panel li{margin:5px 0}
+.may .yes h4{color:var(--done)}.may .no h4{color:var(--block)}.may .ev h4{color:var(--warn)}
+.warnrow{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:12px}
+.foot{margin-top:56px;font-size:13px;color:var(--faint)}
+</style>
+<style>
+.bar-in,main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0 6px}
+@media (max-width:860px){.days{grid-template-columns:1fr}}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.day.crit{border-color:var(--accent);background:var(--accent-soft)}
+.day .k{font:500 11.5px/1 var(--mono);color:var(--accent)}
+.day h4{margin:6px 0 4px;font:500 17px/1.25 var(--display)}
+.day p{font-size:13px;color:var(--muted);margin:0 0 8px}
+.day .gt{font-size:12.5px;border-top:1px dashed var(--line-strong);padding-top:8px;color:var(--text)}
+.day .gt b{font:500 11px/1 var(--mono);color:var(--faint);display:block;margin-bottom:4px;letter-spacing:.04em}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 18px}
+.chain .n{font:500 12.5px/1 var(--mono);padding:7px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--text)}
+.chain .n.done{background:var(--done-soft);border-color:var(--done);color:var(--done)}
+.chain .n.doing{background:var(--doing-soft);border-color:var(--doing);color:var(--doing)}
+.chain .ar{color:var(--faint)}
+</style>
+<nav class="bar" aria-label="Pages"><div class="bar-in">
+  <span class="brand"><span class="dot"></span>harel<span class="sub">· hackathon board</span></span>
+  <div class="tabs" id="tabs"></div>
+  <span class="save" id="save">Connecting…</span>
+</div></nav>
+
+<main>
+  <section class="page" id="p-board">
+    <div class="kicker">Lexsi hackathon · Agentic Fine-tuning · problem 8, with 9 in support</div>
+    <h1>Catch it, heal it, prove it, in four days</h1>
+    <p class="lede">One closed loop: the Harel verifier catches what a small builder agent gets wrong, the verdict retrains it through AgentTune, a factory change ships only through an A/B test, and AuditKIT shows the gain. Tickets are ordered by what invalidates what, and each names the artifact that exists when it is done.</p>
+    <div class="callout warn"><strong>Critical path: the verifier passes its Day 1 gate (V7).</strong> If it misses a planted trap or flags a correct handler, every reward, retrain and slide after it is meaningless. Nothing in Training or Eval starts its real runs before V7 is done.</div>
+    <div class="sum">
+      <div class="panel"><div class="big" id="ovPct">0%</div><div class="small" id="ovLbl"></div><div class="stack" id="ovBar"></div>
+        <div class="legend"><span><i style="background:var(--todo)"></i>To do</span><span><i style="background:var(--doing)"></i>In progress</span><span><i style="background:var(--review)"></i>In review</span><span><i style="background:var(--done)"></i>Done</span></div></div>
+      <div class="panel"><div class="ws-strip" id="wsStrip"></div></div>
+    </div>
+    <div class="filters">
+      <input id="q" type="search" placeholder="Search tickets, for example reward or mutant" aria-label="Search tickets">
+      <select id="fTy" aria-label="Filter by type"><option value="">All types</option><option value="build">Build</option><option value="measure">Measure</option><option value="review">Write-up</option><option value="decision">Decision</option><option value="chore">Chore</option></select>
+      <select id="fRd" aria-label="Filter by readiness"><option value="">All tickets</option><option value="ready">Ready to start</option><option value="blocked">Blocked by dependencies</option><option value="parked">Fallback or stretch</option></select>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+  <div id="pages"></div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle"></aside>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- plan data ---------- */
+const WS = [
+ {id:"b", tab:"Setup", name:"Setup and decisions", q:"Before Day 1 ends", ph:"D0",
+  outcome:"Everyone knows the compute, the model and who owns what, and AgentTune runs on our GPU.",
+  why:"Compute decides the model size and whether GRPO is affordable at all. Discovering on Day 2 that a stock example does not run is the most expensive surprise this plan can have.",
+  deliverable:"Recorded decisions on compute, model, owners and name, plus a stock AgentTune GRPO example run end to end on the target GPU.",
+  gate:"A stock AgentTune GRPO example completes one training step on our hardware.",
+  src:["Build plan §7 Open questions","AgentTune README Quick Start","Roadmap §1 Principles"]},
+ {id:"s", tab:"Spec & env", name:"Spec and environment", q:"Day 1 · the world the agent works in", ph:"D1",
+  outcome:"A shop service, a spec with hidden contracts, and tasks an agent can actually attempt.",
+  why:"The contracts are the oracle. If the spec format cannot express the traps we want to catch, we find out here, not on Day 3. The spec author writes the holdout section; no agent ever reads it.",
+  deliverable:"spec.md (build, resources, holdout), the shop service on Postgres with handler stubs, weak visible tests, a split task set, and an AgentTune harness.",
+  gate:"An agent can open a task, edit a handler, run the visible tests and finish, and the episode resets cleanly.",
+  src:["Spec format (chat, 9 Nov)","R2 ground-truth-app idea, qarth board","AgentTune Harness: DictTool, OpenEnv"]},
+ {id:"v", tab:"Verifier", name:"Verifier", q:"Day 1 · the product", ph:"D1",
+  outcome:"The verifier says pass, fail or unknown for every step, and the reason, with no model involved.",
+  why:"This is the only real gate in the system and the thing we ship. It has to be shown to have teeth before anything trusts it: every planted trap and mutant fails, every reference handler passes.",
+  deliverable:"Effect capture per tool call, contract loader, settlement, classifier, mutation set, and the failure line L1 receives.",
+  gate:"Reference handlers PASS; every trap and mutant FAILs with the right class; missing evidence is UNKNOWN, never PASS.",
+  src:["qarth capture and alphabet","E3 mutation operators","Design doc §4.2 effects diff, §5 schema"]},
+ {id:"t", tab:"Training", name:"Training loop", q:"Days 2–3 · self-learning", ph:"D2",
+  outcome:"The builder agent is retrained on verifier verdicts and ships only through a gate.",
+  why:"The track is fine-tuning. The headline is that a verifier-gated loop made the agent measurably better, so the reward and the gate must both come from the verifier, not from a judge.",
+  deliverable:"A settlement reward in reward_funcs, a baseline, a retrained L1, a DeploymentGate on held-out tasks plus mutants, and the closed-loop hooks.",
+  gate:"The retrained L1 beats the base on held-out verified success with no regression on the mutation set.",
+  src:["AgentTune create_agentic_trainer","AgentTune decide.closed_loop","Build plan §3 Days 2 and 3"]},
+ {id:"g", tab:"Governance", name:"Factory governance", q:"Day 3 · self-aligning", ph:"D3",
+  outcome:"One change to the factory is proposed, tested and recorded, with why and whether it worked.",
+  why:"No other factory demo can say why it changed and prove the change helped. One honest round is enough; more rounds on 20–40 tasks would be noise.",
+  deliverable:"Factory version records, a governor that proposes one change with an expected effect, an A/B run scored by the verifier, and one factory-graph row.",
+  gate:"One factory-graph row: trigger, diff, expected effect, observed effect, decision.",
+  src:["Factory governance design (chat, 9 Nov)","Final diagram: governance plane"]},
+ {id:"a", tab:"Eval", name:"AuditKIT eval", q:"Days 2–3 · the scoreboard", ph:"D2",
+  outcome:"The before and after, and the reward-hacking comparison, with significance.",
+  why:"Judges trust the sponsor's own eval suite. The reward-hacking result is the problem 9 claim: an LLM judge approves broken builds that the verifier rejects.",
+  deliverable:"An LLM-judge baseline reward, AuditKIT episodes loaded from AgentTune, compare_models with bootstrap significance, and tool-call metrics.",
+  gate:"A before/after table with significance, and the share of mutants each reward approved.",
+  src:["AuditKIT compare_models","AgentTune: Hand the run to AuditKIT"]},
+ {id:"k", tab:"Demo", name:"Demo and submission", q:"Day 4 · what judges see", ph:"D4",
+  outcome:"A four-minute story with every sentence traceable to a run, and a backup recording.",
+  why:"Caught, corrected, proven. Small sample sizes mean every number is a demonstration, not proof, and the slides say so.",
+  deliverable:"Report HTML, slides with the diagrams, a claims sheet, two rehearsals, a recorded backup and the submission package.",
+  gate:"Code freeze at midday Day 4, two clean rehearsals, and every spoken sentence sourced or cut.",
+  src:["Build plan §5 Demo","Abstract (submitted text)","qarth DM13 claims-sheet rule"]}
+];
+
+const PH = [
+ {id:"D0", n:"Setup", ex:"Compute, model, owners. AgentTune runs a stock example.", gate:"one GRPO step on our GPU"},
+ {id:"D1", n:"Environment and verifier", ex:"spec.md, shop service, capture, settlement, mutants.", gate:"V7: traps and mutants fail, references pass", crit:true},
+ {id:"D2", n:"Integration and baseline", ex:"Reward, harness, baseline, first training run, judge baseline.", gate:"a training step moves with the verifier reward"},
+ {id:"D3", n:"Heal, gate, govern", ex:"Retrain, DeploymentGate, factory A/B, AuditKIT comparison.", gate:"before/after with significance; one factory row"},
+ {id:"D4", n:"Demo", ex:"Report, slides, claims sheet, rehearsals, backup.", gate:"code freeze midday; two rehearsals"}
+];
+
+// s = default status, d = dependencies, ty = type, sz = size (S hours, M half a day, L a day), pk = fallback or stretch
+const T = [
+{id:"B1",ws:"b",ty:"decision",sz:"S",s:"todo",t:"Confirm compute: GPU type and hours",
+ dl:"A note in this ticket naming GPU, memory, hours and where it runs.",
+ ac:["Check hackathon-provided compute first","GPU memory recorded, since it caps model size and num_generations","Decides GRPO first or DPO first (T3 vs T8)"],
+ g:"compute named",d:[],src:"Build plan §7"},
+{id:"B2",ws:"b",ty:"decision",sz:"S",s:"todo",t:"Choose the L1 model",
+ dl:"A model id pinned in config, with the reason.",
+ ac:["Start from a model AgentTune's examples already run (Qwen3-1.7B or Qwen2.5-1.5B-Instruct)","A small coder model only if B1 allows it","LoRA config chosen with it"],
+ g:"model pinned",d:["B1"],src:"AgentTune README; Build plan §7"},
+{id:"B3",ws:"b",ty:"decision",sz:"S",s:"todo",t:"Assign track owners",
+ dl:"One owner per workstream, written on this board.",
+ ac:["Three tracks: verifier and environment, training, eval and demo","With two people, eval and demo merges into the other two from Day 3"],
+ g:"every workstream has an owner",d:[],src:"Build plan §4"},
+{id:"B4",ws:"b",ty:"chore",sz:"S",s:"todo",t:"Read the submission rules and judging criteria",
+ dl:"A short list of required deliverables and the scoring criteria, pasted into this ticket.",
+ ac:["Video, repo, write-up or live demo: which are required","Deadline with time zone","Any rule on using AgentTune and AuditKIT"],
+ g:"requirements listed",d:[],src:"hackathon.lexsi.ai/tracks"},
+{id:"B5",ws:"b",ty:"build",sz:"M",s:"todo",t:"Repo scaffold and AgentTune smoke test",
+ dl:"A repo with Python 3.12 env, AgentTune and AuditKIT installed, and one stock GRPO run log.",
+ ac:["pip install -e AgentTune, plus [vllm] only on Linux with CUDA","Stock GRPO example completes at least one step","AuditKIT imports and reads that run's trajectories.jsonl","Verifier lives in its own module with an adapter, because both libraries are noncommercial"],
+ g:"one GRPO step logged",d:["B1","B2"],src:"AgentTune Quick Start; Roadmap open questions"},
+{id:"B6",ws:"b",ty:"decision",sz:"S",s:"todo",t:"Record: effect declarations pulled forward from v0.1",
+ dl:"A dated line in decision-log.md.",
+ ac:["States that holdout contracts are the effect-declaration format","Notes the spec had parked them to v0.1 and why that changed","Settles the submission name: Harel, with qarth as the repo"],
+ g:"decision logged",d:[],src:"qarth spec ‘Not on this board’; Roadmap §5"},
+
+{id:"S1",ws:"s",ty:"review",sz:"M",s:"todo",t:"Write spec.md v1 for the shop",
+ dl:"spec.md with build, resources and holdout sections.",
+ ac:["20–40 holdout contracts with effects, cardinality, atomic sets and closure","Traps seeded: inventory decrement at cart-add, coupon reuse, order without its event, checkout that half-commits","Resources list names every logical resource and marks contested ones","Written by us; no agent drafts the holdout"],
+ g:"every trap has a contract",d:[],src:"Spec format (chat, 9 Nov)"},
+{id:"S2",ws:"s",ty:"build",sz:"S",s:"todo",t:"Spec linter and intake split",
+ dl:"A script that validates spec.md and writes build.md and holdout.yaml.",
+ ac:["Every holdout resource exists in resources","Every contested resource has a contract touching it","No holdout id or effect is quoted in the build section","Split is by section heading, never by a model","A planted bad spec fails the linter first"],
+ g:"planted bad spec rejected",d:["S1"],src:"Spec linter rule (chat, 9 Nov)"},
+{id:"S3",ws:"s",ty:"build",sz:"L",s:"todo",t:"Shop service on Postgres",
+ dl:"Schema, migrations, handler stubs for L1, and correct reference handlers kept out of the agent's view.",
+ ac:["Cart, inventory, orders, coupons and an outbox table for events","wal_level=logical, checked by query","Reference handlers live outside the agent's working directory","Reset to a seeded state in under a few seconds"],
+ g:"reference handlers run",d:[],src:"Build plan §2"},
+{id:"S4",ws:"s",ty:"build",sz:"S",s:"todo",t:"Visible tests for the agent",
+ dl:"A small test file L1 can run, deliberately shallow.",
+ ac:["Checks responses, not durable effects, the way builder tests usually do","Passes on at least one trap variant, so the gap is visible"],
+ g:"a trap passes visible tests",d:["S3"],src:"Design doc §1 premise"},
+{id:"S5",ws:"s",ty:"build",sz:"S",s:"todo",t:"Task set, split before any run",
+ dl:"tasks.jsonl with train and held-out splits, frozen.",
+ ac:["One handler to implement or patch per task","Split written and hashed before the first baseline run","Held-out tasks never enter training data"],
+ g:"split hashed",d:["S1","S3"],src:"Build plan §3 Day 1"},
+{id:"S6",ws:"s",ty:"build",sz:"M",s:"todo",t:"AgentTune harness for the shop",
+ dl:"A harness exposing read_file, write_file, run_visible_tests and finish.",
+ ac:["Sandbox resets per episode","No tool can read holdout.yaml or the reference handlers","Every tool call emits a step marker for capture (V1)","One manual episode runs end to end"],
+ g:"one episode end to end",d:["S3","S4","B5"],src:"AgentTune Harness"},
+
+{id:"V1",ws:"v",ty:"build",sz:"M",s:"todo",t:"Capture effects per tool call",
+ dl:"A logical decoding reader plus pg_logical_emit_message markers around each step.",
+ ac:["Every row change belongs to exactly one step","Before and after values present (REPLICA IDENTITY FULL on watched tables)","Slot cleaned up on crash so WAL is not pinned"],
+ g:"changes attributed per step",d:["S3"],src:"qarth capture; runner R1 marker idea"},
+{id:"V2",ws:"v",ty:"build",sz:"S",s:"todo",t:"Capture emitted events",
+ dl:"Events read from the outbox table, attributed to the same steps.",
+ ac:["Event name and payload recorded","Attributed through the same markers as V1"],
+ g:"events attributed per step",d:["V1"],src:"Design doc §5.1 emit"},
+{id:"V3",ws:"v",ty:"build",sz:"S",s:"todo",t:"Contract loader",
+ dl:"Reads holdout.yaml into typed contracts.",
+ ac:["Resources matched as logical patterns, bound to tables in one binding file","Unknown fields rejected"],
+ g:"all contracts load",d:["S2"],src:"Design doc §5 logical resources"},
+{id:"V4",ws:"v",ty:"build",sz:"M",s:"todo",t:"Settlement: PASS, FAIL, UNKNOWN",
+ dl:"A function from captured effects plus contract to a verdict.",
+ ac:["PASS only when every required effect is present with direct evidence","FAIL when an effect is contradicted or a closure is broken","UNKNOWN when evidence is missing; it never counts as PASS","Model-free: no import of any model client"],
+ g:"three verdicts on fixtures",d:["V1","V2","V3"],src:"Dossier: settlement engine"},
+{id:"V5",ws:"v",ty:"build",sz:"S",s:"todo",t:"Mechanical failure classifier",
+ dl:"A class and the step for every FAIL.",
+ ac:["Classes: undeclared write, missing write, missing event, broken atomicity, wrong cardinality, wrong final state","Names the step that caused it"],
+ g:"each trap gets its class",d:["V4"],src:"Design doc §4.2"},
+{id:"V6",ws:"v",ty:"build",sz:"M",s:"todo",t:"Mutation set",
+ dl:"10–20 broken handler variants with their expected class.",
+ ac:["Operators: freeze, divert, orphan, drop, stale","Each mutant labelled with the class it should produce","Kept separate from training data"],
+ g:"mutants labelled",d:["S3"],src:"E3 operators"},
+{id:"V7",ws:"v",ty:"measure",sz:"S",s:"todo",t:"Day 1 gate: the verifier has teeth",
+ dl:"A run log over references, traps and mutants.",
+ ac:["Every reference handler PASSes","Every trap and mutant FAILs with its expected class","Kill rate and UNKNOWN rate recorded","A check planted to pass a broken mutant was seen to fail first"],
+ g:"100% traps and mutants caught",d:["V5","V6"],src:"Build plan §3 Day 1 gate"},
+{id:"V8",ws:"v",ty:"build",sz:"S",s:"todo",t:"The failure line L1 receives",
+ dl:"A one-line message per FAIL, e.g. step 3 wrote to inventory, which this task must not touch.",
+ ac:["Gives class and step only","Never includes the contract text or other scenarios","Unit test asserts no holdout field appears in the message"],
+ g:"no contract leak",d:["V5"],src:"Factory design: what L1 is told"},
+{id:"V9",ws:"v",ty:"build",sz:"M",s:"todo",pk:true,t:"Plan-coverage check (stretch)",
+ dl:"Checks every holdout effect is claimed by at least one task's planned effects.",
+ ac:["Reports uncovered effects without revealing scenarios","Only if Day 3 has slack"],
+ g:"gaps reported",d:["V3"],src:"Plan coverage (chat, 9 Nov)"},
+
+{id:"T1",ws:"t",ty:"build",sz:"S",s:"todo",t:"Settlement reward function",
+ dl:"harel_settlement_reward in reward_funcs.",
+ ac:["PASS +1, UNKNOWN 0, FAIL negative","Optional small penalty per failing step, for a process reward","Deterministic for the same trajectory"],
+ g:"reward deterministic",d:["V7","S6"],src:"AgentTune reward_funcs"},
+{id:"T2",ws:"t",ty:"measure",sz:"S",s:"todo",t:"Baseline: base L1 on all tasks",
+ dl:"Verified success on train and held-out, plus trajectories.jsonl.",
+ ac:["Scored by the verifier, not by visible tests","Visible-test pass rate recorded beside it, to show the gap","If near 0%, narrow tasks before training (risk table)"],
+ g:"baseline numbers exist",d:["T1"],src:"Build plan §3 Day 2"},
+{id:"T3",ws:"t",ty:"measure",sz:"M",s:"todo",t:"First short GRPO run",
+ dl:"A run log showing whether reward moves.",
+ ac:["Small max_steps, LoRA","Step time recorded, to size the full run","No change after the run: switch to T8"],
+ g:"reward moves, or switch decided",d:["T2"],src:"Build plan §6 risks"},
+{id:"T4",ws:"t",ty:"build",sz:"M",s:"todo",t:"Closed-loop hooks",
+ dl:"Our detector and classifier feeding AgentTune's training buffer.",
+ ac:["Emits trajectory_id, stage_name and state_snapshot if scan_audit_log is used, or calls the buffer directly","Training examples only from a failure plus a repair that PASSes the verifier","Repairs that do not verify are dropped, not buffered"],
+ g:"buffer fills from verified repairs",d:["T1"],src:"AgentTune decide.closed_loop"},
+{id:"T5",ws:"t",ty:"measure",sz:"L",s:"todo",t:"Full retrain",
+ dl:"A retrained L1 adapter and its run log.",
+ ac:["Train split only","Same seed policy as the baseline","Adapter saved with provenance"],
+ g:"adapter saved",d:["T3","T4"],src:"Build plan §3 Day 3"},
+{id:"T6",ws:"t",ty:"build",sz:"M",s:"todo",t:"DeploymentGate on held-out tasks and mutants",
+ dl:"A gate decision: deploy or keep the old model, with the numbers.",
+ ac:["Held-out verified success must rise","No regression on the mutation set","Thresholds written before the run"],
+ g:"gate decision recorded",d:["T5"],src:"AgentTune DeploymentGate"},
+{id:"T7",ws:"t",ty:"build",sz:"S",s:"todo",t:"L2 router rules",
+ dl:"Rule-based routing: retry with the failure line, block on UNKNOWN.",
+ ac:["No LLM approval anywhere on the merge path","Retry limit set","UNKNOWN escalates, never merges"],
+ g:"routing rules tested",d:["V8"],src:"Factory design: L2 routes, never judges"},
+{id:"T8",ws:"t",ty:"build",sz:"M",s:"todo",pk:true,t:"Fallback: DPO or BCO on verified pairs",
+ dl:"Preference pairs from passing and failing trajectories, trained offline.",
+ ac:["Use only if T3 shows GRPO is too slow or flat","Same reward source: the verifier"],
+ g:"used only if T3 says so",d:["T2"],src:"Build plan §6 fallback"},
+
+{id:"G1",ws:"g",ty:"build",sz:"S",s:"todo",t:"Factory version records",
+ dl:"A version id on every event, plus a record of L1's prompt and memory per version.",
+ ac:["Every run pinned to a factory version","Versions archived, never overwritten"],
+ g:"runs carry a version",d:["S6"],src:"Factory graph design"},
+{id:"G2",ws:"g",ty:"build",sz:"M",s:"todo",t:"Factory governor proposal",
+ dl:"A proposed change to L1's prompt or memory, with its expected effect written first.",
+ ac:["Triggered by a repeated failure class from the verifier","Cannot edit the verifier, contracts, benchmark or thresholds","Expected effect recorded before the A/B run"],
+ g:"proposal with expected effect",d:["G1","T2"],src:"Governance plane"},
+{id:"G3",ws:"g",ty:"measure",sz:"M",s:"todo",t:"A/B on the fixed benchmark",
+ dl:"Current versus candidate factory, scored by the verifier.",
+ ac:["Same held-out tasks for both","Win rule written before the run","Small sample stated on the result"],
+ g:"A/B decided",d:["G2","V7"],src:"Factory A/B loop diagram"},
+{id:"G4",ws:"g",ty:"build",sz:"S",s:"todo",t:"Factory-graph row",
+ dl:"One row: trigger, diff, expected, observed, decision.",
+ ac:["Generated from records, not typed by hand","Shown in the report (K2)"],
+ g:"row generated",d:["G3"],src:"Factory graph design"},
+
+{id:"A1",ws:"a",ty:"build",sz:"S",s:"todo",t:"LLM-judge reward baseline",
+ dl:"A judge reward scoring the same trajectories.",
+ ac:["Prompt fixed and saved","Uses AgentTune's LLMJudge or one AuditKIT judge"],
+ g:"judge scores saved",d:["T2"],src:"AgentTune LLMJudge"},
+{id:"A2",ws:"a",ty:"measure",sz:"S",s:"todo",t:"Reward-hacking result",
+ dl:"The share of broken mutants each reward approved.",
+ ac:["Same mutants for both rewards","Reported as two numbers with n, never blended"],
+ g:"two numbers with n",d:["A1","V7"],src:"Problem 9 claim"},
+{id:"A3",ws:"a",ty:"build",sz:"S",s:"todo",t:"Load runs into AuditKIT",
+ dl:"Episodes from trajectories.jsonl for base and retrained runs.",
+ ac:["episodes_from_agenttune on both runs","Verifier verdict attached per episode"],
+ g:"both runs loaded",d:["T2"],src:"AgentTune: Hand the run to AuditKIT"},
+{id:"A4",ws:"a",ty:"measure",sz:"M",s:"todo",t:"Before and after with significance",
+ dl:"compare_models output with bootstrap significance.",
+ ac:["Held-out tasks only","Sample size printed beside every number"],
+ g:"table with significance",d:["A3","T6"],src:"AuditKIT compare_models"},
+{id:"A5",ws:"a",ty:"measure",sz:"S",s:"todo",t:"Tool-call metrics",
+ dl:"Wrong and redundant calls per task, before and after.",
+ ac:["Same tasks for both models","Steps per task reported too"],
+ g:"metrics recorded",d:["A3","T5"],src:"Track problems 1 and 2"},
+
+{id:"K1",ws:"k",ty:"review",sz:"S",s:"done",t:"Abstract",
+ dl:"Submission abstract under 500 words.",
+ ac:["Title: the verification layer inside a software factory that its agents cannot fool","Describes what we built and measure, without claiming results"],
+ g:"submitted text exists",d:[],src:"Chat, 10 Nov"},
+{id:"K2",ws:"k",ty:"build",sz:"M",s:"todo",t:"Single-file HTML report",
+ dl:"One file: verdicts, the per-step trace, before and after, the factory-graph row.",
+ ac:["Opens offline","Every number links to the run it came from","Small-sample note on every result"],
+ g:"report renders from run data",d:["A4","G4"],src:"qarth spec §09"},
+{id:"K3",ws:"k",ty:"review",sz:"S",s:"todo",t:"Claims sheet",
+ dl:"Every sentence we say, mapped to a ticket and an artifact.",
+ ac:["Unsourced sentences struck","No ‘kills the harness’ or ‘any repo’ claims","Adoption figures only with a citation"],
+ g:"no unsourced sentence",d:["K2"],src:"qarth DM13"},
+{id:"K4",ws:"k",ty:"build",sz:"M",s:"todo",t:"Slides",
+ dl:"Problem, diagrams, three result numbers, roadmap.",
+ ac:["Uses the factory and layer diagrams","Says the layer is the product and the factory is the demo","Roadmap from the Harel Roadmap doc"],
+ g:"deck complete",d:["K3"],src:"Harel Roadmap"},
+{id:"K5",ws:"k",ty:"measure",sz:"S",s:"todo",t:"Recorded backup run",
+ dl:"A screen recording of the full loop.",
+ ac:["Recorded Day 4 morning, before freeze","Shows the caught trap, retrain result and factory row"],
+ g:"recording saved",d:["K2"],src:"Build plan §6"},
+{id:"K6",ws:"k",ty:"measure",sz:"S",s:"todo",t:"Code freeze and two rehearsals",
+ dl:"Freeze at midday Day 4, two timed run-throughs.",
+ ac:["Under the time limit both times","Fixes after freeze only for demo-breaking bugs"],
+ g:"two clean rehearsals",d:["K4","K5"],src:"Build plan §3 Day 4"},
+{id:"K7",ws:"k",ty:"chore",sz:"S",s:"todo",t:"Submission package",
+ dl:"Repo README, video and write-up as the rules require.",
+ ac:["Matches B4's required list","Repo runs from its README on a clean machine, or says what it needs"],
+ g:"submitted",d:["B4","K6"],src:"hackathon rules"}
+];
+
+/* Claims the pitch can make, and which tickets earn each one. */
+const REP=[
+ {k:"A",title:"The verifier has teeth",tk:["V4","V5","V6","V7"],can:"Every planted trap and mutant was caught with the right class, and the UNKNOWN rate is shown.",not:"Call the verifier strong. Until V7 passes it is untested."},
+ {k:"B",title:"Blame lands on a step",tk:["V1","V2","V8"],can:"The failing step and what it touched, shown without leaking the contract.",not:"Say which step broke anything; we only know the run failed."},
+ {k:"C",title:"The agent healed",tk:["T1","T2","T4","T5","T6","A4"],can:"Held-out verified success, base versus retrained, with significance and n, through a gate.",not:"Claim improvement. There is no baseline yet."},
+ {k:"D",title:"The reward cannot be gamed",tk:["A1","A2"],can:"The share of broken builds an LLM judge approved versus Harel, on the same mutants.",not:"Say a judge is worse; it has not been run."},
+ {k:"E",title:"The factory improved itself safely",tk:["G1","G2","G3","G4","T7"],can:"One change: why it was proposed, what was expected, what was observed, and the decision.",not:"Describe self-alignment as working; it is a design."},
+ {k:"F",title:"It fits the track",tk:["B5","S6","A3","A5"],can:"Built on AgentTune's loop and scored with AuditKIT, including tool-call metrics.",not:"Say we used the sponsor's tools until runs exist."},
+ {k:"G",title:"The demo holds up",tk:["S1","S2","K2","K3","K4","K5","K6","K7"],can:"A rehearsed story with a backup recording, every sentence sourced.",not:"Present anything not on the claims sheet."}
+];
+
+/* ---------- state ---------- */
+const STS=[["todo","To do"],["doing","In progress"],["review","In review"],["done","Done"]];
+const SL=Object.fromEntries(STS);
+const TYL={build:"Build",measure:"Measure",review:"Write-up",decision:"Decision",chore:"Chore"};
+const byId=Object.fromEntries(T.map(t=>[t.id,t]));
+const wsById=Object.fromEntries(WS.map(w=>[w.id,w]));
+const state={}; let db=null, readOnly=false, mode="local", fWs="", openId=null, lastFocus=null;
+const $=(s,e=document)=>e.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const st=id=>(state[id]&&state[id].status)||byId[id].s;
+const depsDone=t=>t.d.every(x=>st(x)==="done");
+const isBlocked=t=>st(t.id)!=="done"&&!depsDone(t);
+const acDone=t=>{const a=(state[t.id]&&state[t.id].ac)||[];return t.ac.filter((_,i)=>a[i]).length};
+const pct=(n,d)=>d?Math.round(100*n/d):0;
+
+/* ---------- persistence ---------- */
+const LS="harel-hack-board-v1";
+function loadLocal(){try{const r=localStorage.getItem(LS);if(r)Object.assign(state,JSON.parse(r))}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}}
+function setSave(s){$("#save").textContent=s}
+const queues={};
+function persist(id){
+  const body=Object.assign({status:byId[id].s,notes:"",ac:[]},state[id],{updatedAt:new Date().toISOString()});
+  if(mode!=="db"){saveLocal();setSave("Saved in this browser only");return}
+  setSave("Saving…");
+  queues[id]=(queues[id]||Promise.resolve()).then(()=>db.doc("tickets/"+id).set(body))
+    .then(()=>setSave("Synced"))
+    .catch(e=>{ if(e&&(e.code==="invalid_argument"||e.code==="not_granted"||e.code==="permission_denied")){readOnly=true;setSave("View only");renderAll()} else setSave("Could not save. Check the connection.") });
+}
+function update(id,patch){
+  if(readOnly)return;
+  state[id]=Object.assign({status:byId[id].s,notes:"",ac:[]},state[id],patch);
+  persist(id);renderAll();
+}
+
+/* ---------- render ---------- */
+function chip(s){return `<span class="chip ${s}">${SL[s]}</span>`}
+function statusChip(t){return isBlocked(t)?`<span class="chip blocked">Blocked</span>`:chip(st(t.id))}
+function wsProgress(ids){const ts=T.filter(t=>ids.includes(t.ws));return {done:ts.filter(t=>st(t.id)==="done").length,n:ts.length}}
+const hashOf=w=>"ws-"+w.id;
+
+function renderTabs(){
+  const cur=currentPage();
+  const items=[["board","Board"],["overview","Overview"],["plan","Plan"],...WS.map(w=>[hashOf(w),w.tab]),["decisions","Decisions"]];
+  $("#tabs").innerHTML=items.map(([h,l])=>`<a href="#${h}" class="${cur===h?"on":""}">${esc(l)}</a>`).join("");
+}
+function renderSummary(){
+  const tot=T.length, by={todo:0,doing:0,review:0,done:0};
+  T.forEach(t=>by[st(t.id)]++);
+  $("#ovPct").textContent=pct(by.done,tot)+"%";
+  $("#ovLbl").textContent=`${by.done} of ${tot} tickets done · ${T.filter(t=>isBlocked(t)).length} blocked by dependencies`;
+  $("#ovBar").innerHTML=["done","review","doing","todo"].map(s=>`<span style="width:${100*by[s]/tot}%;background:var(--${s})" title="${SL[s]}: ${by[s]}"></span>`).join("");
+  const all=`<button class="ws-chip" data-ws="" aria-pressed="${fWs===""}"><b>ALL</b><span class="nm">Every workstream</span><div class="mini"><span style="width:${pct(by.done,tot)}%"></span></div></button>`;
+  $("#wsStrip").innerHTML=all+WS.map(w=>{const p=wsProgress([w.id]);return `<button class="ws-chip" data-ws="${w.id}" aria-pressed="${fWs===w.id}"><b>${w.ph} · ${w.id.toUpperCase()}</b><span class="nm">${esc(w.name)}</span><div class="mini"><span style="width:${pct(p.done,p.n)}%"></span></div></button>`}).join("");
+}
+function filtered(){
+  const q=$("#q").value.trim().toLowerCase(), ty=$("#fTy").value, rd=$("#fRd").value;
+  return T.filter(t=>{
+    if(fWs&&t.ws!==fWs)return false;
+    if(ty&&t.ty!==ty)return false;
+    if(rd==="parked"){if(!t.pk)return false} else if(rd&&t.pk)return false;
+    if(rd==="ready"&&!(depsDone(t)&&st(t.id)==="todo"))return false;
+    if(rd==="blocked"&&!isBlocked(t))return false;
+    if(q&&!(t.id.toLowerCase().includes(q)||t.t.toLowerCase().includes(q)||t.dl.toLowerCase().includes(q)||t.ac.join(" ").toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function card(t){
+  const n=acDone(t);
+  return `<div class="card" tabindex="0" draggable="${!readOnly}" data-id="${t.id}">
+    <div class="r1"><span class="id">${t.id}</span><span>${wsById[t.ws].ph}</span><span class="sz">${t.sz}</span></div>
+    <div class="t">${esc(t.t)}</div>
+    <div class="r2"><span class="tag">${TYL[t.ty]}</span>${t.ty==="decision"&&st(t.id)!=="done"?`<span class="tag decision">needs a yes</span>`:""}${isBlocked(t)?`<span class="tag blocked">blocked by ${t.d.filter(x=>st(x)!=="done").join(", ")}</span>`:""}${t.pk?`<span class="tag parked">fallback or stretch</span>`:""}</div>
+    ${n?`<div class="acbar" title="${n} of ${t.ac.length} criteria"><span style="width:${pct(n,t.ac.length)}%"></span></div>`:""}</div>`;
+}
+function renderBoard(){
+  const list=filtered();
+  $("#count").textContent=`${list.length} ticket${list.length===1?"":"s"}`;
+  $("#board").innerHTML=STS.map(([s,l])=>{
+    const items=list.filter(t=>st(t.id)===s);
+    return `<div class="col" data-col="${s}"><h3><span class="dot" style="background:var(--${s})"></span>${l}<span class="n">${items.length}</span></h3>${items.map(card).join("")||`<div class="empty">${s==="todo"?"No tickets match these filters.":"Nothing here."}</div>`}</div>`;
+  }).join("");
+}
+
+function ticketTable(ts){
+  return `<div class="tablewrap"><table><thead><tr><th>ID</th><th>Ticket and deliverable</th><th>Gate</th><th>Needs</th><th>Status</th></tr></thead><tbody>${ts.map(t=>`<tr class="row" data-open="${t.id}" tabindex="0"><td class="id">${t.id}</td><td><span class="ttl">${esc(t.t)}</span><br><span class="small">${esc(t.dl)}</span></td><td class="sm">${esc(t.g)}</td><td class="sm">${t.d.join(", ")||"nothing"}</td><td>${statusChip(t)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function wsPage(w){
+  const ts=T.filter(t=>t.ws===w.id), p=wsProgress([w.id]);
+  return `<section class="page" id="p-${hashOf(w)}" hidden>
+    <div class="kicker">${esc(w.q)} · ${w.ph}</div>
+    <h1>${esc(w.outcome)}</h1>
+    <div class="meta"><span class="chip plain">${p.done} of ${p.n} tickets done</span><span class="chip plain">${ts.filter(t=>t.ty==="decision").length} decisions</span><span class="chip plain">${ts.filter(t=>t.pk).length} fallback or stretch</span></div>
+    <div class="callout"><p><strong>Deliverable.</strong> ${esc(w.deliverable)}</p><p><strong>Gate.</strong> ${esc(w.gate)}</p></div>
+    <h2>Why this, now</h2><p class="lede">${esc(w.why)}</p>
+    <h2>Tickets</h2>${ticketTable(ts)}
+    <h2>Where it comes from</h2><ul class="plain">${w.src.map(s=>`<li><code>${esc(s)}</code></li>`).join("")}</ul>
+  </section>`;
+}
+
+const secStat=s=>{const d=s.tk.filter(i=>st(i)==="done").length,a=s.tk.filter(i=>["doing","review"].includes(st(i))).length;return {d,n:s.tk.length,label:d===s.tk.length?"can claim":(d||a)?"building":"not started"}};
+function chainHtml(ids){return `<div class="chain">${ids.map((i,k)=>`${k?'<span class="ar" aria-hidden="true">→</span>':""}<button class="n ${st(i)==="done"?"done":["doing","review"].includes(st(i))?"doing":""}" data-open="${i}" title="${esc(byId[i].t)}">${i}</button>`).join("")}</div>`}
+
+function overviewPage(){
+  const n=T.length, done=T.filter(t=>st(t.id)==="done").length;
+  const stat=(v,l)=>`<div class="panel"><b>${v}</b><span>${l}</span></div>`;
+  const ready=REP.filter(s=>secStat(s).label==="can claim").length;
+  return `<section class="page" id="p-overview" hidden>
+    <div class="kicker">What the pitch will be able to say</div>
+    <h1>Seven claims, and what earns each one</h1>
+    <p class="lede">The submission is a set of claims. Each one becomes sayable only when its tickets are done; until then the right column is what we must not say.</p>
+    <div class="stats">${stat(ready+" of "+REP.length,"claims ready")}${stat(n,"tickets")}${stat(done,"done")}${stat(T.filter(t=>!t.pk&&st(t.id)==="todo"&&depsDone(t)).length,"ready to start")}${stat(T.filter(isBlocked).length,"blocked")}${stat(T.filter(t=>t.ty==="decision"&&st(t.id)!=="done").length,"decisions waiting")}</div>
+    <h2>The four days</h2>
+    <div class="days">${PH.map(p=>`<div class="day${p.crit?" crit":""}"><div class="k">${p.id}</div><h4>${esc(p.n)}</h4><p>${esc(p.ex)}</p><div class="gt"><b>GATE</b>${esc(p.gate)}</div></div>`).join("")}</div>
+    <p class="cap">Day 1 carries the critical path. A missed gate triggers the fallback in the Plan tab, not a later start.</p>
+    <h2>The critical path</h2>
+    ${chainHtml(["S1","S3","V1","V4","V5","V7","T1","T2","T5","T6","A4","K2"])}
+    <p class="cap">Boxes turn green as tickets finish. Everything else runs beside this chain.</p>
+    <h2>Claims and their tickets</h2>
+    <div class="tablewrap"><table><thead><tr><th>Claim</th><th>Tickets</th><th>Once done, we can say</th><th>Until then, we can’t</th></tr></thead><tbody>
+      ${REP.map(s=>{const q=secStat(s);return `<tr><td><b>${s.k}</b> ${esc(s.title)}<br><span class="chip ${q.label==="can claim"?"done":q.label==="building"?"doing":"todo"}">${q.label}</span></td><td><div class="cl">${s.tk.map(i=>`<button class="chip plain" data-open="${i}" title="${esc(byId[i].t)}">${i}</button>`).join("")}</div></td><td class="cl2">${esc(s.can)}</td><td class="no2">${esc(s.not)}</td></tr>`}).join("")}
+    </tbody></table></div>
+  </section>`;
+}
+function planPage(){
+  const risks=[
+   ["GRPO too slow, or reward flat","T3 shows no change, or a step takes too long","Switch to DPO or BCO on verified pairs (T8); same reward source"],
+   ["Model cannot write handlers at all","Baseline verified success near zero (T2)","Narrow tasks to one function from a template, or move L1 to operating the shop API"],
+   ["Verifier misses a trap","V7 fails","Fix contracts or capture first; nothing downstream means anything without it"],
+   ["Closed loop expects DECIDE audit logs","Detector finds nothing","Call our detector directly and feed the buffer (T4)"],
+   ["No GPU, or too little","B5 smoke test fails","Smallest documented model, LoRA, fewer generations"],
+   ["Live demo breaks","A rehearsal fails","Play the recorded backup (K5)"]];
+  return `<section class="page" id="p-plan" hidden>
+    <div class="kicker">The rules · from the build plan and the roadmap</div>
+    <h1>What we build, what we cut, and what never bends</h1>
+    <p class="lede">The layer is the product and the demo factory is plain on purpose, so credit goes to the verifier. One module, one trained L1, one factory round.</p>
+    <h2>In and out</h2>
+    <div class="cols3">
+      <div class="panel"><h4>In</h4><ul><li>Verifier: contracts, capture per step, settlement, classifier, mutants.</li><li>Self-learning: verdicts as reward; retrain; ship through a gate.</li><li>Self-aligning: one governor change, A/B tested.</li><li>AuditKIT before and after.</li></ul></div>
+      <div class="panel"><h4>Cut or stubbed</h4><ul><li>L3 is a static module map; L2 is rules.</li><li>One module, one L1: no worktrees, no merge queue.</li><li>MCP serving optional; a Python API is enough.</li><li>No production telemetry, no second factory.</li></ul></div>
+    </div>
+    <h2>Rules every ticket obeys</h2>
+    <div class="cols3">
+      <div class="panel"><h4>The agent never sees the oracle</h4><ul><li>No tool reads holdout.yaml or the reference handlers.</li><li>L1 gets the failure class and step, never the contract.</li></ul></div>
+      <div class="panel"><h4>Nothing judges itself</h4><ul><li>Detection, settlement and gates are model-free.</li><li>The governor cannot edit the verifier, contracts, benchmark or thresholds.</li></ul></div>
+      <div class="panel"><h4>Checks fail first</h4><ul><li>A new check is planted bad and seen to fail before it is trusted.</li><li>Thresholds and splits are written before the runs they govern.</li></ul></div>
+      <div class="panel"><h4>Numbers carry their n</h4><ul><li>20–40 tasks make demonstrations, not proof; say so.</li><li>No blended score; UNKNOWN is shown, never folded into pass.</li></ul></div>
+    </div>
+    <h2>Risks and fallbacks</h2>
+    <div class="tablewrap"><table><thead><tr><th>Risk</th><th>Early sign</th><th>Fallback</th></tr></thead><tbody>${risks.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td class="sm">${esc(r[1])}</td><td class="cl2">${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>
+    <div class="callout warn"><p><strong>Paused from the qarth board.</strong> Stand-up, the declarative arm, the explorer, the E2E demo and the model spine stay parked until after the hackathon. The Harel Roadmap says when each returns.</p></div>
+  </section>`;
+}
+function decisionsPage(){
+  const ds=T.filter(t=>t.ty==="decision");
+  return `<section class="page" id="p-decisions" hidden>
+    <div class="kicker">Across workstreams</div>
+    <h1>Decisions waiting for a yes</h1>
+    <p class="lede">Each of these blocks or shapes other tickets. Open one to record the outcome in its notes and mark it done.</p>
+    <div>${ds.map(t=>`<div class="dec" data-open="${t.id}" tabindex="0"><span class="id">${t.id}</span><div><div class="q">${esc(t.t)}</div><div class="why">${esc(t.ac[0])}</div><div class="why">Unblocks: ${T.filter(x=>x.d.includes(t.id)).map(x=>x.id).join(", ")||"nothing directly"} · source: ${esc(t.src)}</div></div>${statusChip(t)}</div>`).join("")}</div>
+  </section>`;
+}
+function buildPages(){
+  $("#pages").innerHTML=overviewPage()+planPage()+WS.map(wsPage).join("")+decisionsPage();
+}
+function renderAll(){
+  renderTabs();renderSummary();renderBoard();
+  buildPages();showPage(currentPage());
+  if(openId)renderDrawer(openId);
+}
+
+/* ---------- drawer ---------- */
+function renderDrawer(id){
+  const t=byId[id], d=state[id]||{}, acs=d.ac||[], s=st(id), dis=readOnly?"disabled":"";
+  const w=wsById[t.ws];
+  $("#drawer").innerHTML=`<button class="close" id="dClose">Close</button>
+   <div class="kicker">${t.id} · ${esc(w.name)} · ${w.ph}</div>
+   <h2 id="dTitle">${esc(t.t)}</h2>
+   <div class="meta"><span class="chip plain">${TYL[t.ty]}</span><span class="chip plain">Size ${t.sz}</span>${t.pk?`<span class="chip plain">Fallback or stretch</span>`:""}${isBlocked(t)?`<span class="chip blocked">Blocked</span>`:""}</div>
+   <h4>Status</h4><div class="pick">${STS.map(([k,l])=>`<button data-s="${k}" aria-pressed="${s===k}" ${dis}>${l}</button>`).join("")}</div>
+   <h4>Deliverable</h4><p>${esc(t.dl)}</p>
+   <h4>Done when</h4><ul class="ac">${t.ac.map((a,i)=>`<li><input type="checkbox" id="ac-${i}" data-ac="${i}" ${acs[i]?"checked":""} ${dis}><label for="ac-${i}">${esc(a)}</label></li>`).join("")}</ul>
+   <h4>Gate</h4><p>${esc(t.g)}</p>${s==="done"&&acDone(t)<t.ac.length?`<div class="warnrow">Marked done with ${t.ac.length-acDone(t)} of ${t.ac.length} criteria unticked. Tick them, or move the card back.</div>`:""}
+   <h4>Needs</h4>${t.d.length?`<div class="deps">${t.d.map(x=>`<button data-open="${x}" class="${st(x)==="done"?"done":""}" title="${esc(byId[x].t)}">${x}${st(x)==="done"?" ✓":""}</button>`).join("")}</div>`:`<p class="small">Nothing. Ready now.</p>`}
+   <h4>Source</h4><p><code>${esc(t.src)}</code></p>
+   <h4><label for="notes">Notes</label></h4>
+   <textarea class="field" id="notes" placeholder="Outcome, decision taken, link to the run or commit" ${dis}>${esc(d.notes||"")}</textarea>`;
+}
+function openDrawer(id){
+  if(!byId[id])return;
+  if(!openId)lastFocus=document.activeElement;
+  openId=id;renderDrawer(id);
+  $("#drawer").hidden=false;$("#scrim").hidden=false;$("#drawer").scrollTop=0;$("#dClose").focus();
+}
+function closeDrawer(){openId=null;$("#drawer").hidden=true;$("#scrim").hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+
+/* ---------- pages and events ---------- */
+const PAGES=["board","overview","plan",...WS.map(hashOf),"decisions"];
+function currentPage(){const h=(location.hash||"").slice(1);return PAGES.includes(h)?h:"board"}
+function showPage(p){
+  document.querySelectorAll(".page").forEach(s=>s.hidden=s.id!=="p-"+p);
+  document.querySelectorAll("#tabs a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+p));
+}
+window.addEventListener("hashchange",()=>{showPage(currentPage());window.scrollTo(0,0)});
+
+document.addEventListener("click",e=>{
+  const ws=e.target.closest("[data-ws]");if(ws){fWs=ws.dataset.ws;renderSummary();renderBoard();return}
+  const sp=e.target.closest(".pick button");if(sp&&openId){update(openId,{status:sp.dataset.s});return}
+  const op=e.target.closest("[data-open]");if(op){openDrawer(op.dataset.open);return}
+  const c=e.target.closest(".card");if(c){openDrawer(c.dataset.id);return}
+  if(e.target.id==="dClose"||e.target.id==="scrim"){closeDrawer();return}
+});
+document.addEventListener("change",e=>{
+  if(!openId)return;
+  if(e.target.matches("[data-ac]")){const a=((state[openId]&&state[openId].ac)||[]).slice();a[+e.target.dataset.ac]=e.target.checked;update(openId,{ac:a})}
+  else if(e.target.id==="notes")update(openId,{notes:e.target.value});
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&openId)closeDrawer();
+  if(e.key==="Enter"&&e.target.dataset){ if(e.target.classList.contains("card"))openDrawer(e.target.dataset.id); else if(e.target.dataset.open)openDrawer(e.target.dataset.open) }
+});
+["q","fTy","fRd"].forEach(i=>$("#"+i).addEventListener("input",renderBoard));
+let dragId=null;
+document.addEventListener("dragstart",e=>{const c=e.target.closest&&e.target.closest(".card");if(c&&!readOnly){dragId=c.dataset.id;e.dataTransfer.effectAllowed="move"}});
+document.addEventListener("dragover",e=>{const col=e.target.closest&&e.target.closest(".col");if(col&&dragId){e.preventDefault();document.querySelectorAll(".col.drop").forEach(x=>x!==col&&x.classList.remove("drop"));col.classList.add("drop")}});
+document.addEventListener("drop",e=>{const col=e.target.closest&&e.target.closest(".col");document.querySelectorAll(".col.drop").forEach(x=>x.classList.remove("drop"));if(col&&dragId){e.preventDefault();if(st(dragId)!==col.dataset.col)update(dragId,{status:col.dataset.col})}dragId=null});
+document.addEventListener("dragend",()=>{dragId=null;document.querySelectorAll(".col.drop").forEach(x=>x.classList.remove("drop"))});
+
+/* ---------- start ---------- */
+loadLocal();renderAll();setSave("Saved in this browser only");
+(async()=>{
+  const c=window.claude;if(!c||typeof c.use!=="function")return;
+  try{
+    const [d,user]=await Promise.all([c.use("db"),c.use("user")]);
+    if(!d)return;
+    db=d;mode="db";for(const k of Object.keys(state))delete state[k];
+    if(user&&typeof user.can==="function"){const w=await user.can("data.write");if(w===false)readOnly=true}
+    setSave(readOnly?"View only":"Synced");renderAll();
+    db.collection("tickets").onSnapshot(snap=>{
+      const seen=new Set();
+      snap.docs.forEach(doc=>{if(doc.exists&&byId[doc.id]){const v=doc.data();state[doc.id]={status:v.status||byId[doc.id].s,notes:v.notes||"",ac:Array.isArray(v.ac)?v.ac.slice():[]};seen.add(doc.id)}});
+      Object.keys(state).forEach(k=>{if(!seen.has(k))delete state[k]});
+      const a=document.activeElement;
+      if(openId&&a&&a.id==="notes"){renderTabs();renderSummary();renderBoard()} else renderAll();
+    },()=>setSave("Live sync stopped. Reload to reconnect."));
+  }catch(e){}
+})();
+})();
+</script>
+
+</body></html>

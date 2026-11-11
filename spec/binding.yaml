@@ -1,0 +1,12 @@
+# One place that binds the logical resources named in contracts to tables. Keys may be globs.
+resources:
+  products: products
+  inventory: inventory
+  carts: carts
+  cart_items: cart_items
+  coupons: coupons
+  coupon_redemptions: coupon_redemptions
+  orders: orders
+  order_items: order_items
+  share_links: share_links
+  outbox: outbox

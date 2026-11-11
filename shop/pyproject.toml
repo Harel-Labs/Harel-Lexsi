@@ -1,0 +1,16 @@
+[project]
+name = "harel-shop"
+version = "0.1.0"
+description = "Shop service on Postgres: the world the L1 builder agent works in"
+requires-python = "==3.12.*"
+dependencies = ["psycopg[binary]>=3.2"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

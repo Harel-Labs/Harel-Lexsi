@@ -24,23 +24,25 @@ All handlers share these rules:
 
 - A handler that fails raises `ShopError(code)` and leaves the database exactly as it was before the call.
 - A handler must change only what its description says it changes.
-- Money is in integer cents. Quantities are positive integers.
+- Money is in integer cents. Quantities are positive integers. A quantity that is not a positive
+  integer fails with `invalid_qty` (except `update_cart_item`, where 0 is allowed).
+- A product that does not exist or is not active fails with `not_found`.
 
 ### Cart
 
 | Handler | Inputs | Behaviour |
 |---|---|---|
 | `add_to_cart` | user_id, product_id, qty | Adds the product to the user's open cart. If the cart does not exist, it is created first. If the product is already in the cart, its quantity increases. Fails with `out_of_stock` if the requested total exceeds the stock on hand. Adding to a cart does **not** reserve stock. |
-| `update_cart_item` | user_id, product_id, qty | Sets the quantity of a line in the open cart. A quantity of 0 removes the line. Same stock check as `add_to_cart`. |
+| `update_cart_item` | user_id, product_id, qty | Sets the quantity of a line in the open cart. A quantity of 0 removes the line. Same stock check as `add_to_cart`. Fails with `not_in_cart` if the line is not in the cart. |
 | `remove_from_cart` | user_id, product_id | Removes the line from the open cart. Fails with `not_in_cart` if the line is not there. |
-| `clear_cart` | user_id | Removes every line and any applied coupon from the open cart. The cart itself remains. |
+| `clear_cart` | user_id | Removes every line and any applied coupon from the open cart. The cart itself remains. If the user has no open cart, nothing happens. |
 
 ### Coupons
 
 | Handler | Inputs | Behaviour |
 |---|---|---|
-| `apply_coupon` | user_id, code | Attaches a coupon to the open cart. Fails with `invalid_coupon` if the coupon is unknown, inactive or expired. Fails with `coupon_already_used` if this user has already redeemed it on a placed order. A cart holds at most one coupon, and applying a new one replaces the old one. Applying a coupon does **not** redeem it. |
-| `remove_coupon` | user_id | Detaches the coupon from the open cart. |
+| `apply_coupon` | user_id, code | Attaches a coupon to the open cart. Fails with `invalid_coupon` if the coupon is unknown, inactive or expired. Fails with `coupon_already_used` if this user has already redeemed it on a placed order. Fails with `empty_cart` if the user has no open cart. A cart holds at most one coupon, and applying a new one replaces the old one. Applying a coupon does **not** redeem it. |
+| `remove_coupon` | user_id | Detaches the coupon from the open cart. If there is no open cart, or it has no coupon, nothing happens. |
 
 ### Checkout
 
@@ -60,9 +62,9 @@ All handlers share these rules:
 
 | Handler | Inputs | Behaviour |
 |---|---|---|
-| `share_cart` | user_id | Creates a share link for the open cart and returns its token. The cart is not changed. Publishes a `cart.shared` event. |
+| `share_cart` | user_id | Creates a share link for the open cart and returns its token. The cart is not changed. Publishes a `cart.shared` event. Fails with `empty_cart` if the user has no open cart. |
 | `view_shared_cart` | token | Returns the shared cart's lines. Read-only. Fails with `not_found` if the token is unknown or revoked. |
-| `import_shared_cart` | user_id, token | Copies the shared cart's lines into the caller's open cart, adding quantities to lines already there. The owner's cart and the share link are not changed. The coupon is not copied. No stock is reserved. |
+| `import_shared_cart` | user_id, token | Copies the shared cart's lines into the caller's open cart, adding quantities to lines already there. The owner's cart and the share link are not changed. The coupon is not copied. No stock is reserved and stock is not checked here (checkout checks it). If the caller has no open cart, one is created. Fails with `not_found` if the token is unknown or revoked. |
 
 ### Events
 

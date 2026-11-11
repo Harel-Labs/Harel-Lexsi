@@ -1,0 +1,24 @@
+[project]
+name = "harel-lexsi"
+version = "0.1.0"
+description = "Harel verifier + AgentTune closed loop (Lexsi hackathon)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "pydantic-settings>=2.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+# AgentTune / AuditKIT are noncommercial and installed from local checkouts:
+#   uv pip install -e ../AgentTune   (add "[vllm]" only on Linux with CUDA)
+#   uv pip install -e ../AuditKIT
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/harel_lexsi"]

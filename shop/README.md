@@ -31,3 +31,14 @@ Override the connection with `SHOP_DSN`.
   `reset`, because reset truncates and reseeds (lots of WAL).
 - `reset` truncates and reseeds in one transaction. It does not drop and recreate the database,
   because a replication slot is tied to its database.
+
+## Visible tests and traps (S4)
+
+- `app/tests/visible/` is what L1 can run. It checks returned dicts and `ShopError` codes only, never
+  table contents, stock, the outbox or atomicity. Pick the handlers under test with
+  `SHOP_HANDLERS` (default `app.handlers`):
+  `SHOP_HANDLERS=reference.handlers uv run pytest app/tests/visible`.
+- `reference/traps/` holds trap variants (inventory taken at cart-add, checkout without its
+  `order.placed` event). They pass the visible tests and break a hidden contract. Never shown to L1.
+- `tests/test_visible_gap.py` proves the gap: visible tests pass on reference and traps, fail on the
+  stubs, while effect checks catch each trap.

@@ -1,0 +1,31 @@
+# TEST FIXTURES for the verifier machinery. Not the holdout: the team writes that (S1).
+contracts:
+  - id: F-01
+    handler: add_to_cart
+    input: { user_id: 1, product_id: 1, qty: 2 }
+    effects:
+      - { id: e1, resource: carts, op: insert, count: 1, match: { user_id: $input.user_id } }
+      - { id: e2, resource: cart_items, op: insert, count: 1, match: { product_id: $input.product_id }, change: { qty: 2 } }
+    atomic: [e1, e2]
+    closure: true
+
+  - id: F-02
+    handler: checkout
+    given: cart_notebook_x2
+    input: { user_id: 1 }
+    effects:
+      - { id: e1, resource: orders, op: insert, count: 1, match: { user_id: $input.user_id } }
+      - { id: e2, resource: order_items, op: insert, count: 1, match: { product_id: 1, qty: 2 } }
+      - { id: e3, resource: inventory, op: update, count: 1, match: { product_id: 1 }, change: { on_hand: "-2" } }
+      - { id: e4, resource: cart_items, op: delete, count: 1, match: { product_id: 1 } }
+      - { id: e5, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { status: checked_out } }
+      - { id: e6, resource: outbox, op: emit, count: 1, event: order.placed }
+    atomic: [e1, e2, e3, e4, e5, e6]
+    closure: true
+
+  - id: F-03
+    handler: add_to_cart
+    input: { user_id: 1, product_id: 5, qty: 6 }
+    expect_error: out_of_stock
+    effects: []
+    closure: true

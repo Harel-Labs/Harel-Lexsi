@@ -1,0 +1,76 @@
+# TEST FIXTURES for the mutation set (V6). Not the holdout: the team writes that (S1).
+# Each contract is passed by the reference handlers; a mutant must break it. F-01 and F-02 live in
+# shop_contracts.yaml.
+contracts:
+  # checkout without a coupon, with the totals spelled out
+  - id: M-01
+    handler: checkout
+    given: cart_notebook_x2
+    input: { user_id: 1 }
+    effects:
+      - { id: e1, resource: orders, op: insert, count: 1, match: { user_id: $input.user_id }, change: { subtotal_cents: 1000, discount_cents: 0, total_cents: 1000 } }
+      - { id: e2, resource: order_items, op: insert, count: 1, match: { product_id: 1, qty: 2 } }
+      - { id: e3, resource: inventory, op: update, count: 1, match: { product_id: 1 }, change: { on_hand: "-2" } }
+      - { id: e4, resource: cart_items, op: delete, count: 1, match: { product_id: 1 } }
+      - { id: e5, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { status: checked_out } }
+      - { id: e6, resource: outbox, op: emit, count: 1, event: order.placed }
+    atomic: [e1, e2, e3, e4, e5, e6]
+    closure: true
+
+  # checkout with coupon SAVE10: discount applied and the coupon recorded as used
+  - id: M-02
+    handler: checkout
+    given: cart_notebook_x2_save10
+    input: { user_id: 1 }
+    effects:
+      - { id: e1, resource: orders, op: insert, count: 1, match: { user_id: $input.user_id }, change: { subtotal_cents: 1000, discount_cents: 100, total_cents: 900 } }
+      - { id: e2, resource: order_items, op: insert, count: 1, match: { product_id: 1, qty: 2 } }
+      - { id: e3, resource: inventory, op: update, count: 1, match: { product_id: 1 }, change: { on_hand: "-2" } }
+      - { id: e4, resource: cart_items, op: delete, count: 1, match: { product_id: 1 } }
+      - { id: e5, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { status: checked_out } }
+      - { id: e6, resource: coupon_redemptions, op: insert, count: 1, match: { coupon_code: SAVE10, user_id: $input.user_id } }
+      - { id: e7, resource: outbox, op: emit, count: 1, event: order.placed }
+    atomic: [e1, e2, e3, e4, e5, e6, e7]
+    closure: true
+
+  # cancel a placed order that used a coupon
+  - id: M-03
+    handler: cancel_order
+    given: placed_order_save10
+    input: { user_id: 1, order_id: 1 }
+    effects:
+      - { id: e1, resource: orders, op: update, count: 1, match: { id: $input.order_id }, change: { status: cancelled } }
+      - { id: e2, resource: inventory, op: update, count: 1, match: { product_id: 1 }, change: { on_hand: "+2" } }
+      - { id: e3, resource: coupon_redemptions, op: update, count: 1, match: { order_id: $input.order_id }, change: { released: true } }
+      - { id: e4, resource: outbox, op: emit, count: 1, event: order.cancelled }
+    atomic: [e1, e2, e3, e4]
+    closure: true
+
+  # apply a coupon to an open cart: only the cart changes
+  - id: M-04
+    handler: apply_coupon
+    given: cart_notebook_x2
+    input: { user_id: 1, code: SAVE10 }
+    effects:
+      - { id: e1, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { coupon_code: $input.code } }
+    closure: true
+
+  # share a cart: one link and one event, the cart itself untouched
+  - id: M-05
+    handler: share_cart
+    given: cart_notebook_x2
+    input: { user_id: 1 }
+    effects:
+      - { id: e1, resource: share_links, op: insert, count: 1, match: { created_by: $input.user_id } }
+      - { id: e2, resource: outbox, op: emit, count: 1, event: cart.shared }
+    atomic: [e1, e2]
+    closure: true
+
+  # remove a line from the cart
+  - id: M-06
+    handler: remove_from_cart
+    given: cart_notebook_x2
+    input: { user_id: 1, product_id: 1 }
+    effects:
+      - { id: e1, resource: cart_items, op: delete, count: 1, match: { product_id: $input.product_id } }
+    closure: true

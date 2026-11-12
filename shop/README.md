@@ -42,3 +42,11 @@ Override the connection with `SHOP_DSN`.
   `order.placed` event). They pass the visible tests and break a hidden contract. Never shown to L1.
 - `tests/test_visible_gap.py` proves the gap: visible tests pass on reference and traps, fail on the
   stubs, while effect checks catch each trap.
+
+## Mutants (V6)
+
+- `reference/mutants.py` lists 17 broken variants of the reference handlers (operators: freeze, divert,
+  orphan, drop, stale). Each is the reference source with one patch applied, labelled with the failure
+  class the verifier must report. Never shown to L1.
+- `tests/test_mutants.py` (repo root, needs Postgres) judges each mutant with fixture contracts from
+  `tests/fixtures/` and asserts FAIL with the right class. Those fixtures are not the holdout.

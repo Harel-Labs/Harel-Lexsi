@@ -1,6 +1,6 @@
 """V7: the Day 1 gate. Does the verifier have teeth?
 
-    python -m harel_lexsi.verifier.gate [--contracts FILE ...] [--log PATH]
+    python -m harel_lexsi.verifier.gate [--spec spec/spec.md] [--contracts FILE ...] [--log PATH]
 
 Three kinds of handlers are replayed against the contracts and settled:
 
@@ -13,7 +13,8 @@ across the failing contracts include the expected ones. UNKNOWN is never a pass 
 UNKNOWN fails the gate. Exit code: 0 gate passed, 1 gate failed, 2 could not run (no database, no
 contracts). A missing database is never a skip.
 
-The default contracts are test fixtures. After S1, pass the real holdout with --contracts.
+The default contracts are test fixtures. --spec uses the contracts in the spec's own Holdout section
+instead (no full lint needed, so it works while the holdout is half written); --contracts adds YAML files.
 """
 from __future__ import annotations
 
@@ -26,9 +27,19 @@ from pathlib import Path
 from typing import Any
 
 import psycopg
+import yaml
+
+from harel_lexsi.spec.split import holdout_yaml, split_spec
 
 from .classify import classify
-from .contracts import Binding, Contract, load_binding, load_holdout
+from .contracts import (
+    Binding,
+    Contract,
+    ContractError,
+    load_binding,
+    load_holdout,
+    parse_contracts,
+)
 from .replay import ROOT, SHOP, _shop_db, replay
 from .settle import settle as _settle
 from .types import Settlement, Verdict
@@ -127,6 +138,18 @@ class Report:
         return "\n".join(lines)
 
 
+def load_spec_contracts(path: Path, binding: Binding) -> list[Contract]:
+    """The contracts in the spec's Holdout section (its first ```yaml block that defines `contracts:`)."""
+    parts = split_spec(Path(path).read_text())
+    if "Holdout" in parts.missing:
+        raise GateError(f"{path} has no '## Holdout' section")
+    block = holdout_yaml(parts.holdout)
+    try:
+        return parse_contracts(yaml.safe_load(block) if block else None, binding)
+    except (ContractError, yaml.YAMLError) as e:
+        raise GateError(f"holdout in {path}: {e}") from None
+
+
 def check_database() -> None:
     try:
         _shop_db().connect().close()
@@ -188,16 +211,22 @@ def run_gate(contracts: Sequence[Contract], binding: Binding, *, settle: SettleF
 
 def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="harel_lexsi.verifier.gate")
-    p.add_argument("--contracts", nargs="+", type=Path, default=list(DEFAULT_CONTRACTS))
+    p.add_argument("--spec", type=Path, help="use the contracts in this spec's Holdout section")
+    p.add_argument("--contracts", nargs="+", type=Path,
+                   help="YAML files of contracts (default: the test fixtures, unless --spec is given)")
     p.add_argument("--binding", type=Path, default=DEFAULT_BINDING)
     p.add_argument("--log", type=Path, help="also write the report here (markdown)")
     a = p.parse_args(argv)
     try:
         check_database()
         binding = load_binding(a.binding)
-        contracts = [c for f in a.contracts for c in load_holdout(f, binding)]
+        files = a.contracts if a.contracts is not None else ([] if a.spec else list(DEFAULT_CONTRACTS))
+        contracts = [c for f in files for c in load_holdout(f, binding)]
+        if a.spec:
+            contracts += load_spec_contracts(a.spec, binding)
         if not contracts:
-            raise GateError("no contracts to run the gate against")
+            raise GateError("no contracts to run the gate against"
+                            + (f" ({a.spec} has none in its Holdout section yet)" if a.spec else ""))
     except GateError as e:
         print(f"GATE COULD NOT RUN: {e}", file=sys.stderr)
         return 2

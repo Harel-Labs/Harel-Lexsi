@@ -135,3 +135,84 @@ def test_cli_with_no_contracts_exits_2(tmp_path, capsys):
     empty.write_text("contracts: []\n")
     assert G.main(["--contracts", str(empty)]) == 2
     assert "no contracts" in capsys.readouterr().err
+
+
+# ---------- --spec: run the gate on the contracts written in the spec's own Holdout section ----------
+
+SPEC_TEMPLATE = """# Test spec
+
+## Build
+Handlers.
+
+## Resources
+| Resource | Key fields | Written by | Contested |
+|---|---|---|---|
+| `carts` | id | add_to_cart | no |
+| `cart_items` | cart_id | add_to_cart | no |
+
+## Holdout
+
+```yaml
+{body}
+```
+"""
+
+ONE_CONTRACT = """contracts:
+  - id: T-01
+    handler: add_to_cart
+    input: { user_id: 1, product_id: 1, qty: 2 }
+    effects:
+      - { id: e1, resource: carts, op: insert, count: 1, match: { user_id: $input.user_id } }
+      - { id: e2, resource: cart_items, op: insert, count: 1, match: { product_id: 1 }, change: { qty: 2 } }
+    atomic: [e1, e2]
+    closure: true
+"""
+
+
+def write_spec(tmp_path, body):
+    path = tmp_path / "spec.md"
+    path.write_text(SPEC_TEMPLATE.format(body=body))
+    return path
+
+
+def test_spec_contracts_load_without_the_full_lint(tmp_path):
+    spec = write_spec(tmp_path, ONE_CONTRACT)
+    contracts = G.load_spec_contracts(spec, BINDING)
+    assert [c.id for c in contracts] == ["T-01"]
+
+
+def test_spec_run_uses_only_the_spec_contracts_and_reports_what_is_uncovered(tmp_path, capsys):
+    spec = write_spec(tmp_path, ONE_CONTRACT)
+    assert G.main(["--spec", str(spec)]) == 1  # one contract cannot cover every handler
+    out = capsys.readouterr().out
+    assert "| reference | T-01 | add_to_cart | pass |" in out
+    assert "F-02" not in out                          # the test fixtures are not mixed in
+    assert "no contract covers this handler" in out   # e.g. checkout mutants: nothing checks checkout yet
+
+
+def test_spec_with_an_empty_holdout_exits_2(tmp_path, capsys):
+    spec = write_spec(tmp_path, "contracts:\n  # nothing yet")
+    assert G.main(["--spec", str(spec)]) == 2
+    assert "no contracts" in capsys.readouterr().err
+
+
+def test_spec_with_a_bad_contract_exits_2_and_names_the_problem(tmp_path, capsys):
+    spec = write_spec(tmp_path, ONE_CONTRACT.replace("closure: true", "closure: true\n    colour: red"))
+    assert G.main(["--spec", str(spec)]) == 2
+    err = capsys.readouterr().err
+    assert "T-01" in err and "colour" in err
+
+
+def test_spec_without_a_holdout_section_exits_2(tmp_path, capsys):
+    path = tmp_path / "spec.md"
+    path.write_text("# x\n\n## Build\nonly this\n")
+    assert G.main(["--spec", str(path)]) == 2
+    assert "Holdout" in capsys.readouterr().err
+
+
+def test_the_real_spec_has_no_contracts_yet_and_says_so(capsys):
+    """Until S1 is written, the gate refuses to pretend: exit 2, not a pass."""
+    spec = G.ROOT / "spec" / "spec.md"
+    if G.load_spec_contracts(spec, BINDING):
+        pytest.skip("S1 is written; this guard is no longer needed")
+    assert G.main(["--spec", str(spec)]) == 2

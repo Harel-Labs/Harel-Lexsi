@@ -6,7 +6,7 @@ Resolves [Issue #2 (B2)](https://github.com/Harel-Labs/Harel-Lexsi/issues/2). De
 
 ## Decision
 
-**Pin `CohereLabs/tiny-aya-global` as the L1 builder model.** Config:
+**Pin `CohereLabs/tiny-aya-global` as the L1 builder model** (checked 2026-11-13, revision `af89d219b53ed9b13b8a4645f9c8028973510324`; gating is automatic once the licence is accepted). Config:
 
 ```yaml
 roles:

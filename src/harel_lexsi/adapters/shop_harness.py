@@ -12,7 +12,6 @@ Rules enforced here:
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 import re
 import shutil
@@ -26,6 +25,8 @@ from typing import Any
 
 from agenttune.agentic import DictToolHarness
 from agenttune.agentic.harness import Observation
+
+from harel_lexsi.verifier.capture import marker_payload
 
 SHOP = Path(__file__).resolve().parents[3] / "shop"
 DENIED = ("holdout", "reference", "spec")
@@ -46,8 +47,9 @@ def _load_shop_db():
 class ShopSandbox:
     """One episode's workspace and database. Call reset() to start (or restart) an episode."""
 
-    def __init__(self, shop: Path = SHOP):
+    def __init__(self, shop: Path = SHOP, factory_version: str | None = None):
         self.shop = shop
+        self.factory_version = factory_version  # G1: stamped on every step marker
         self._db = _load_shop_db()
         self.workspace: Path | None = None
         self.episode_id = ""
@@ -79,7 +81,7 @@ class ShopSandbox:
     def mark(self, tool: str, phase: str) -> None:
         if self._conn is None:
             return
-        payload = json.dumps({"episode": self.episode_id, "step": self.step, "tool": tool, "phase": phase})
+        payload = marker_payload(self.episode_id, self.step, tool, phase, self.factory_version)
         self._conn.execute("SELECT pg_logical_emit_message(true, 'harel.step', %s)", (payload,))
 
     def next_step(self) -> None:
@@ -209,8 +211,9 @@ class ShopHarness(DictToolHarness):
     emitted here; the other tools mark themselves (see make_tools).
     """
 
-    def __init__(self, sandbox: ShopSandbox | None = None, *, max_steps: int = 20):
-        self.sandbox = sandbox or ShopSandbox()
+    def __init__(self, sandbox: ShopSandbox | None = None, *, max_steps: int = 20,
+                 factory_version: str | None = None):
+        self.sandbox = sandbox or ShopSandbox(factory_version=factory_version)
         super().__init__(make_tools(self.sandbox), max_steps=max_steps, done_tool="finish")
 
     def reset(self, task: str) -> Observation:
@@ -230,5 +233,5 @@ class ShopHarness(DictToolHarness):
         self.sandbox.close()
 
 
-def make_shop_harness(*, max_steps: int = 20) -> ShopHarness:
-    return ShopHarness(max_steps=max_steps)
+def make_shop_harness(*, max_steps: int = 20, factory_version: str | None = None) -> ShopHarness:
+    return ShopHarness(max_steps=max_steps, factory_version=factory_version)

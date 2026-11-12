@@ -15,6 +15,16 @@ import psycopg
 from psycopg.rows import dict_row
 
 MARKER_PREFIX = "harel.step"
+
+
+def marker_payload(episode: str, step: int, tool: str, phase: str,
+                   factory_version: str | None = None) -> str:
+    """The JSON a `harel.step` marker carries. `factory_version` (G1) is added only when the run is
+    pinned to one, so unpinned markers are byte-for-byte what they were before."""
+    info = {"episode": episode, "step": step, "tool": tool, "phase": phase}
+    if factory_version is not None:
+        info["factory_version"] = factory_version
+    return json.dumps(info)
 _COL = re.compile(r"(\w+)\[([^\]]+)\]:")
 _INT = {"integer", "bigint", "smallint"}
 
@@ -38,6 +48,7 @@ class Step:
     step: int
     tool: str
     changes: list[RowChange] = field(default_factory=list)
+    factory_version: str | None = None  # G1: the factory version the run was pinned to
 
     @property
     def events(self) -> list[Event]:
@@ -135,7 +146,7 @@ def attribute(lines: list[str]) -> CaptureResult:
             if info.get("phase") == "start":
                 if open_step is not None:
                     res.complete = False
-                open_step = Step(int(info["step"]), str(info["tool"]))
+                open_step = Step(int(info["step"]), str(info["tool"]), factory_version=info.get("factory_version"))
             elif info.get("phase") == "end" and open_step is not None:
                 res.steps.append(open_step)
                 open_step = None

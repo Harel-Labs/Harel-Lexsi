@@ -50,3 +50,11 @@ Override the connection with `SHOP_DSN`.
   class the verifier must report. Never shown to L1.
 - `tests/test_mutants.py` (repo root, needs Postgres) judges each mutant with fixture contracts from
   `tests/fixtures/` and asserts FAIL with the right class. Those fixtures are not the holdout.
+
+## Day 1 gate (V7)
+
+`uv run python -m harel_lexsi.verifier.gate --log docs/day1-gate.md` (repo root, needs Postgres) replays the
+reference handlers, the S4 traps and the V6 mutants and settles them. Exit 0 only if every reference
+handler PASSes, every trap and mutant is caught with its expected class, and nothing is UNKNOWN.
+Exit 2 means it could not run (no database, no contracts), never a skip. After S1, add
+`--contracts <holdout.yaml>` to run it against the real holdout.

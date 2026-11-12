@@ -2,55 +2,56 @@
 
 Resolves [Issue #2 (B2)](https://github.com/Harel-Labs/Harel-Lexsi/issues/2). Depends on B1 ([docs/hf-openrouter-integration.md](hf-openrouter-integration.md)).
 
+**Revision:** the first pin was `Qwen/Qwen3.5-4B`. The hackathon requires the fine-tuned builder to be a dense, open-weights model from Cohere Labs ("e.g., Tiny Aya 3B or Aya Expanse 8B", stated in the problem description, the FAQ and the requirements), so the pin is now Tiny Aya. Qwen models stay in use only as local dry-run models (see `scripts/grpo_smoke.py`) and, if wanted, as OpenRouter baselines. They are never the submitted model.
+
 ## Decision
 
-**Pin `Qwen/Qwen3.5-4B` as the L1 builder model.** Config:
+**Pin `CohereLabs/tiny-aya-global` as the L1 builder model** (checked 2026-11-13, revision `af89d219b53ed9b13b8a4645f9c8028973510324`; gating is automatic once the licence is accepted). Config:
 
 ```yaml
 roles:
   builder:
     provider: hf
-    model: "Qwen/Qwen3.5-4B"
-    enable_thinking: false      # see "Thinking mode" below
+    model: "CohereLabs/tiny-aya-global"
 ```
 
-Training uses **LoRA** (language model layers only). GRPO runs on Hugging Face GPUs (B1); local machines are for dry runs only.
+Training uses **LoRA** (AgentTune's own Tiny Aya example uses `r=16, lora_alpha=32, target_modules="all-linear"`). GRPO runs on Hugging Face GPUs (B1); local machines are for dry runs only.
 
 ## Reason
 
-- **Fits local dev.** A 4B model trains with LoRA on a 24 GB Apple M4 (estimated ~10-12 GB bf16, less with 4-bit), so the pipeline, data format and verifier hooks can be tested without spending HF GPU hours.
-- **Cheaper GRPO on HF.** Smaller model means more `num_generations` and longer episodes per GPU hour. The HF flavor can be smaller than for 9B.
-- **Same family can scale up.** Qwen3.5 also ships a 9B. Same tokenizer and tool-call format, so moving up is a config change if the 4B baseline is too weak (see B2 trigger below).
-- **Apache-2.0**, native tool calling, 262K context.
-- **Alternatives considered:** Qwen3.5-9B (heavier, bf16 LoRA ~22 GB, no local dev); Gemma 4B (second tool-call format and license, unverified in AgentTune); Qwen2.5-1.5B-Instruct (named in the B2 ticket, kept as last resort).
+- **Meets the requirement:** dense, open-weights, from Cohere Labs.
+- **AgentTune already runs it.** Its README has a Tiny Aya tool-calling example (`create_agentic_trainer(model="CohereLabs/tiny-aya-global", tools=[...], peft_config=...)`) and says it runs on CPU or a Mac without vLLM. That satisfies B2's first criterion (a model AgentTune's examples already run), which Qwen3.5-4B did not.
+- **Small (3.35B).** LoRA fits a small HF GPU, and a local dry run on the M4 is plausible.
+- **Alternatives considered:** Aya Expanse 8B (same fallback tool handling, bigger GPU; the escalation path); Tiny Aya Fire/Earth/Water (regional variants, no reason to prefer them for English code tasks); Qwen models (not allowed as the submitted model).
 
 ## Deviations from the B2 ticket
 
-- Criterion 1 says to start from a model AgentTune's examples already run (Qwen3-1.7B or Qwen2.5-1.5B-Instruct). Qwen3.5-4B is **not confirmed** to be one of them. The B5 smoke test (one stock GRPO step on the HF GPU) is the check.
-- Criterion 2 (small coder model only if B1 allows): not used. A general model with tool calling is the simpler choice.
+- Criterion 1 named Qwen3-1.7B or Qwen2.5-1.5B-Instruct. Those are replaced by a Cohere model, per the hackathon requirement. Tiny Aya is in AgentTune's examples, so the intent of the criterion holds.
+- Criterion 2 (small coder model only if B1 allows): not used. No Cohere coder model is in scope.
 
 ## Things to handle
 
-1. **Thinking mode.** The model thinks by default; non-thinking needs `enable_thinking: false` in the request. Long thinking traces inflate rollout cost and reward noise. Start non-thinking; revisit only if baseline verified success (T2) is near zero.
-2. **Multimodal architecture.** The model card lists it as image-text-to-text. Apply LoRA to the language model only and verify the trainer loads it as a text model.
-3. **vLLM.** Needs a recent (main/nightly) vLLM, with `--enable-auto-tool-choice --tool-call-parser qwen3_coder`. Reports say GRPO via vLLM fast-inference may not work for Qwen3.5 yet in some trainers; if so, rollouts are slower and the T8 (DPO) fallback matters more.
-4. **HF router availability.** Only Featherless AI is listed as a provider on the model page. Confirm `supports_tools` on the router's `/v1/models`; if absent, serve from our own endpoint or fall back to OpenRouter for baseline rollouts.
+1. **No native tool-call rendering.** Tiny Aya's chat template has only a `default` template and renders a `tool` turn as empty. AgentTune detects this and falls back (with a warning): it puts the tool schemas in the system prompt, asks for a `[{"tool_name": ..., "parameters": {...}}]` list, and returns tool results as user turns. Consequences: (a) check on a real rollout that `write_file` calls reach `trajectories.jsonl` normalized as `{name, arguments}`; the T1 reward (`final_files`) relies on that; (b) a 3B model may emit malformed tool calls, so the baseline (T2) may be low and task narrowing may be needed.
+2. **Gated model.** Accept the licence on the model page and run `hf auth login` (or set `HF_TOKEN`) wherever it is downloaded, including HF Jobs.
+3. **8K context** (8K in, 8K out). Episodes that read and rewrite handler files must stay short. Keep tool outputs trimmed and tasks to one handler.
+4. **License: CC-BY-NC-4.0** plus Cohere's Acceptable Use Policy, so non-commercial. This matches AgentTune and AuditKIT being non-commercial.
+5. **Serving.** The card lists Cohere as the inference provider, and we cannot assume the HF serverless router serves it or serves a fine-tune. Plan to serve the base and fine-tuned model from our own HF GPU or endpoint, and keep OpenRouter for baselines and the governance agent only. Check `/v1/models` for tool support if the router is used.
+6. **vLLM.** Not needed for AgentTune's Tiny Aya path (it runs without vLLM). GRPO rollouts will be slower than with vLLM; the T8 (DPO) fallback matters more.
 
 ## LoRA config (starting point, tune after B5)
 
 | Setting | Start at |
 |---|---|
-| Rank / alpha | 16 / 32 |
-| Target modules | attention and MLP projections of the language model |
-| Dropout | 0.05 |
-| Precision | bf16 on HF GPU; 4-bit QLoRA for local dry runs |
+| Rank / alpha | 16 / 32 (AgentTune's example) |
+| Target modules | `all-linear` (AgentTune's example) |
+| Precision | bf16 on HF GPU; 4-bit or bf16 for local dry runs |
 | Merge | merge into base weights before serving or DeploymentGate |
 
 ## Escalation
 
-Move to Qwen3.5-9B only if T2 baseline verified success is near zero and narrowing tasks does not help. Needs a 40-80 GB HF flavor.
+Move to Aya Expanse 8B only if the T2 baseline verified success is near zero and narrowing tasks does not help. Needs a larger HF flavor; confirm size before booking.
 
 ## Done when
 
 - [ ] Model id pinned in config (above)
-- [ ] B5 smoke test: Qwen3.5-4B completes one GRPO step on the HF GPU; if not, fall back to Qwen2.5-1.5B-Instruct and record why here
+- [ ] B5 smoke test: Tiny Aya completes one GRPO step with the shop tools on the HF GPU, and AuditKIT reads that run's `trajectories.jsonl`; if not, record why here and fall back to Aya Expanse 8B

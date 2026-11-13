@@ -307,7 +307,7 @@ contracts:
     given: cart_notebook_x2_save10
     input: { user_id: 1 }
     effects:
-      - { id: e1, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { coupon_code: null } }
+      - { id: e1, resource: carts, op: update, count: 1, match: { user_id: $input.user_id }, change: { coupon_code: null, status: open } }
     closure: true
 
   - id: C-23

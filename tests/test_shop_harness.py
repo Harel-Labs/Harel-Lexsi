@@ -110,3 +110,39 @@ def test_tools_are_plain_documented_functions(harness):
     tools = make_tools(harness.sandbox)
     assert set(tools) == {"read_file", "write_file", "run_visible_tests", "finish"}
     assert all(t.__doc__ for t in tools.values())
+
+
+def _task(task_id):
+    import json
+
+    root = Path(__file__).parents[1] / "tasks"
+    return next(json.loads(l) for l in (root / "tasks.jsonl").read_text().splitlines()
+                if json.loads(l)["id"] == task_id), root
+
+
+def test_patch_task_starts_from_its_start_file(harness):
+    task, root = _task("patch-remove_coupon")
+    harness.reset(task["prompt"])
+    obs, _, _, _ = call(harness, "read_file", path=task["target"])
+    assert obs.text == (root / task["start"]).read_text()
+    assert "checked_out" in obs.text  # the planted bug is what the agent starts from
+
+
+def test_implement_task_starts_from_the_stub(harness):
+    task, _ = _task("implement-remove_coupon")
+    harness.reset(task["prompt"])
+    obs, _, _, _ = call(harness, "read_file", path=task["target"])
+    assert "NotImplementedError" in obs.text
+
+
+def test_edited_start_file_is_refused(tmp_path):
+    import json
+
+    from harel_lexsi.adapters.shop_harness import SandboxError, patch_start_for
+
+    task, _ = _task("patch-remove_coupon")
+    (tmp_path / "starts").mkdir()
+    (tmp_path / task["start"]).write_text("tampered")
+    (tmp_path / "tasks.jsonl").write_text(json.dumps(task) + "\n")
+    with pytest.raises(SandboxError):
+        patch_start_for(task["prompt"], tmp_path)

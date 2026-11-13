@@ -11,7 +11,9 @@ Rules enforced here:
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import os
 import re
 import shutil
@@ -29,12 +31,35 @@ from agenttune.agentic.harness import Observation
 from harel_lexsi.verifier.capture import marker_payload
 
 SHOP = Path(__file__).resolve().parents[3] / "shop"
+TASKS = Path(__file__).resolve().parents[3] / "tasks"
 DENIED = ("holdout", "reference", "spec")
 OUTPUT_TAIL = 2000
 
 
 class SandboxError(Exception):
     """A tool call was refused. The message is what the agent sees."""
+
+
+def patch_start_for(prompt: str, tasks_dir: Path = TASKS) -> tuple[str, str] | None:
+    """(target path, start-file text) when `prompt` is a patch task's prompt, else None.
+
+    Implement tasks need nothing: the stub is already in the workspace. The start file's SHA-256 is
+    checked against the task record, so an edited start file cannot slip in unnoticed.
+    """
+    path = tasks_dir / "tasks.jsonl"
+    if not path.is_file():
+        return None
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        t = json.loads(line)
+        if t["prompt"] != prompt or not t.get("start"):
+            continue
+        text = (tasks_dir / t["start"]).read_text()
+        if hashlib.sha256(text.encode()).hexdigest() != t["start_sha256"]:
+            raise SandboxError(f"start file for {t['id']} does not match its recorded hash")
+        return t["target"], text
+    return None
 
 
 def _load_shop_db():
@@ -57,13 +82,17 @@ class ShopSandbox:
         self._conn = None
 
     # ----- lifecycle -----
-    def reset(self) -> None:
+    def reset(self, start: tuple[str, str] | None = None) -> None:
+        """Begin an episode. `start` = (target, text): a patch task's file, placed over the stub."""
         self.close()
         self.workspace = Path(tempfile.mkdtemp(prefix="shop-episode-")).resolve()
         ignore = shutil.ignore_patterns("__pycache__", "*.pyc")
         shutil.copytree(self.shop / "app", self.workspace / "app", ignore=ignore)
         shutil.copytree(self.shop / "tools", self.workspace / "tools", ignore=ignore)
         shutil.copytree(self.shop / "db", self.workspace / "db")
+        if start is not None:
+            target, text = start
+            self._resolve(target, write=True).write_text(text)
         self._conn = self._db.connect()
         self._db.migrate(self._conn)  # schema + seed from scratch: clean state every episode
         self.episode_id = uuid.uuid4().hex[:12]
@@ -217,7 +246,7 @@ class ShopHarness(DictToolHarness):
         super().__init__(make_tools(self.sandbox), max_steps=max_steps, done_tool="finish")
 
     def reset(self, task: str) -> Observation:
-        self.sandbox.reset()
+        self.sandbox.reset(start=patch_start_for(task))
         return super().reset(task)
 
     def step(self, action: dict):

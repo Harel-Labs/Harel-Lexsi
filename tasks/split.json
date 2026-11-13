@@ -1,0 +1,38 @@
+{
+  "heldout": [
+    "implement-update_cart_item",
+    "implement-remove_coupon",
+    "implement-cancel_order",
+    "implement-import_shared_cart",
+    "patch-update_cart_item",
+    "patch-remove_coupon",
+    "patch-cancel_order",
+    "patch-import_shared_cart"
+  ],
+  "heldout_handlers": [
+    "cancel_order",
+    "import_shared_cart",
+    "remove_coupon",
+    "update_cart_item"
+  ],
+  "split_sha256": "5c98b1b98721e58d704473de1bee709ee063e4e8c624659981f626d751d998b9",
+  "tasks_sha256": "7ab8778ca87411441cad01509d7d0c4e18222afb2f18a01b9dadf7e52d785770",
+  "train": [
+    "implement-add_to_cart",
+    "implement-remove_from_cart",
+    "implement-clear_cart",
+    "implement-apply_coupon",
+    "implement-checkout",
+    "implement-get_order",
+    "implement-list_orders",
+    "implement-share_cart",
+    "implement-view_shared_cart",
+    "patch-add_to_cart",
+    "patch-remove_from_cart",
+    "patch-clear_cart",
+    "patch-apply_coupon",
+    "patch-checkout",
+    "patch-get_order",
+    "patch-share_cart"
+  ]
+}

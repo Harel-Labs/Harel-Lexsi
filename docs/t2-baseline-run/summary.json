@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "model": "CohereLabs/tiny-aya-global",
+    "spec_sha256": "2e3720f63a464e8257443943c29995b41810258f262668fd24ab4eb5d5799625",
+    "revision": null,
+    "split": "all",
+    "tasks": 24,
+    "split_sha256": "5c98b1b98721e58d704473de1bee709ee063e4e8c624659981f626d751d998b9",
+    "factory_version": null,
+    "device": "hosted https://router.huggingface.co/v1",
+    "backend": "api",
+    "api_model": "openai/CohereLabs/tiny-aya-global",
+    "max_steps": 8,
+    "max_new_tokens": 1024,
+    "temperature": 0.9,
+    "date": "2026-11-14"
+  },
+  "summary": {
+    "all": {
+      "n": 24,
+      "verified_success": 4,
+      "verified_rate": 0.1667,
+      "visible_pass": 11,
+      "visible_rate": 0.4583,
+      "gap": 0.2916,
+      "failed": 20,
+      "unknown": 0,
+      "unknown_rate": 0.0,
+      "mean_steps": 5.62,
+      "wrote_nothing": 0,
+      "malformed_calls": 0,
+      "errors": 0,
+      "failure_classes": {
+        "missing_write": 11,
+        "undeclared_write": 7,
+        "wrong_final_state": 17,
+        "broken_atomicity": 1,
+        "missing_event": 3
+      }
+    },
+    "train": {
+      "n": 16,
+      "verified_success": 3,
+      "verified_rate": 0.1875,
+      "visible_pass": 7,
+      "visible_rate": 0.4375,
+      "gap": 0.25,
+      "failed": 13,
+      "unknown": 0,
+      "unknown_rate": 0.0,
+      "mean_steps": 6.0,
+      "wrote_nothing": 0,
+      "malformed_calls": 0,
+      "errors": 0,
+      "failure_classes": {
+        "missing_write": 7,
+        "undeclared_write": 5,
+        "wrong_final_state": 10,
+        "broken_atomicity": 1,
+        "missing_event": 2
+      }
+    },
+    "heldout": {
+      "n": 8,
+      "verified_success": 1,
+      "verified_rate": 0.125,
+      "visible_pass": 4,
+      "visible_rate": 0.5,
+      "gap": 0.375,
+      "failed": 7,
+      "unknown": 0,
+      "unknown_rate": 0.0,
+      "mean_steps": 4.88,
+      "wrote_nothing": 0,
+      "malformed_calls": 0,
+      "errors": 0,
+      "failure_classes": {
+        "missing_write": 4,
+        "undeclared_write": 2,
+        "wrong_final_state": 7,
+        "missing_event": 1
+      }
+    },
+    "implement": {
+      "n": 13,
+      "verified_success": 1,
+      "verified_rate": 0.0769,
+      "visible_pass": 3,
+      "visible_rate": 0.2308,
+      "gap": 0.1539,
+      "failed": 12,
+      "unknown": 0,
+      "unknown_rate": 0.0,
+      "mean_steps": 7.0,
+      "wrote_nothing": 0,
+      "malformed_calls": 0,
+      "errors": 0,
+      "failure_classes": {
+        "missing_write": 8,
+        "undeclared_write": 3,
+        "wrong_final_state": 10,
+        "broken_atomicity": 1,
+        "missing_event": 3
+      }
+    },
+    "patch": {
+      "n": 11,
+      "verified_success": 3,
+      "verified_rate": 0.2727,
+      "visible_pass": 8,
+      "visible_rate": 0.7273,
+      "gap": 0.4546,
+      "failed": 8,
+      "unknown": 0,
+      "unknown_rate": 0.0,
+      "mean_steps": 4.0,
+      "wrote_nothing": 0,
+      "malformed_calls": 0,
+      "errors": 0,
+      "failure_classes": {
+        "undeclared_write": 4,
+        "wrong_final_state": 7,
+        "missing_write": 3
+      }
+    }
+  }
+}

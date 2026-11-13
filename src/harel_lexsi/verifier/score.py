@@ -4,8 +4,9 @@
 
 The agent's code is untrusted, so it never runs in the caller's process: the files go into a fresh
 copy of shop/app/ and a child process replays the handler's contracts against them with a timeout.
-Anything that stops the child from producing a verdict (timeout, crash, no contracts) is UNKNOWN,
-which never counts as a pass. Model-free. The child shares the one shop database, so score one at a time.
+Code that does not even import (syntax error, missing name, bad import) is the agent's failure: FAIL
+with class `does_not_load`. Anything else that stops the child from producing a verdict (timeout,
+crash, no contracts) is UNKNOWN, which never counts as a pass. Model-free. The child shares the one shop database, so score one at a time.
 
 Child entry point: python -m harel_lexsi.verifier.score --workspace DIR --handler NAME [--spec FILE]
 """
@@ -113,7 +114,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps([_to_json(Settlement("scorer", Verdict.UNKNOWN, "no contracts for this handler"))]))
         return 0
     sys.path.insert(0, a.workspace)
-    handlers = importlib.import_module("app.handlers")
+    try:
+        handlers = importlib.import_module("app.handlers")
+    except Exception as e:  # noqa: BLE001  the agent's code does not load: that is its failure, not UNKNOWN
+        detail = f"{type(e).__name__}: {e}"[:300]  # internal; failure lines never show it
+        fail = tuple(Settlement(c.id, Verdict.FAIL, "handler module does not load",
+                                (Violation("load_error", 0, detail=detail),)) for c in mine)
+        print(json.dumps([_to_json(s) for s in fail]))
+        return 0
     out = []
     for c in mine:
         s = replay(c, handlers)

@@ -21,6 +21,7 @@ from auditkit._bootstrap import paired_bootstrap
 from auditkit.agent_eval.importers import episodes_from_agenttune
 
 from .baseline import KNOWN_TOOLS, EpisodeResult
+from .settlement_reward import tool_calls
 
 # Marks a tool call that failed: AgentTune records results as str(dict) and failures as {'error': ...}.
 _ERROR_MARK = "'error'"
@@ -61,8 +62,8 @@ def load_run(folder: str | Path, name: str | None = None) -> Run:
 def _calls(record: Mapping[str, Any]) -> list[tuple[str, Any, str]]:
     out = []
     for step in record.get("steps") or []:
-        a = step.get("action") or {}
-        out.append((a.get("name"), a.get("arguments"), str(step.get("observation", ""))))
+        obs = str(step.get("observation", ""))
+        out.extend((name, args, obs) for name, args in tool_calls(step))
     return out
 
 

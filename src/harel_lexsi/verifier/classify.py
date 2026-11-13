@@ -5,6 +5,8 @@ from .types import FailureClass, Finding, Settlement, Verdict, Violation
 
 
 def classify_violation(v: Violation) -> FailureClass:
+    if v.kind == "load_error":
+        return FailureClass.DOES_NOT_LOAD
     if v.kind == "closure_breach":
         return FailureClass.UNDECLARED_WRITE
     if v.kind == "effect_absent":

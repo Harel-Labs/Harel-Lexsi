@@ -23,6 +23,7 @@ class FailureClass(str, Enum):
     BROKEN_ATOMICITY = "broken_atomicity"
     WRONG_CARDINALITY = "wrong_cardinality"
     WRONG_FINAL_STATE = "wrong_final_state"
+    DOES_NOT_LOAD = "does_not_load"  # the handler module raised on import (syntax error, bad import, ...)
 
 
 @dataclass(frozen=True)

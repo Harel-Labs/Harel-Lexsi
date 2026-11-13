@@ -19,7 +19,7 @@ from typing import Any
 from harel_lexsi.verifier.classify import classify
 from harel_lexsi.verifier.types import Settlement, Verdict
 
-from .settlement_reward import _get, final_files
+from .settlement_reward import _get, final_files, tool_calls
 
 Scorer = Callable[[Mapping[str, str], str], Sequence[Settlement]]
 KNOWN_TOOLS = ("read_file", "write_file", "run_visible_tests", "finish")
@@ -57,10 +57,9 @@ def malformed_calls(trajectory: Any) -> int:
     """Tool calls the harness could not even dispatch: unknown tool name or non-object arguments."""
     n = 0
     for step in _get(trajectory, "steps", None) or []:
-        action = _get(step, "action", None) or {}
-        name, args = _get(action, "name"), _get(action, "arguments", None)
-        if name not in KNOWN_TOOLS or not isinstance(args, dict | type(None)):
-            n += 1
+        for name, args in tool_calls(step):
+            if name not in KNOWN_TOOLS or not isinstance(args, dict | type(None)):
+                n += 1
     return n
 
 
@@ -170,7 +169,7 @@ def run_baseline(tasks: Sequence[Mapping[str, Any]], *, split: Mapping[str, Any]
     traj_path.write_text("")
     for t in tasks:
         start = start_for(t["prompt"])
-        sandbox.reset(start=start)
+        sandbox.reset(start=start, handler=t["handler"])
         trajectory, error, visible = None, "", None
         try:
             trajectory = rollout(t["prompt"])

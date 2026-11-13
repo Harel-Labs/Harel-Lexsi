@@ -49,9 +49,10 @@ def test_patch_task_with_no_writes_is_scored_on_its_start_file():
 
 def test_agent_write_overrides_the_start_file():
     box = []
-    score_episode(task("patch-a", "patch"), traj(("write_file", {"path": PATH, "content": "FIXED"})),
-                  scorer=seen(box), split=SPLIT, start_text="BUGGY")
-    assert box[0][0] == {PATH: "FIXED"}
+    score_episode(task("patch-a", "patch"), traj(("write_file", {"path": PATH, "content": "FIXED = 1\n"})),
+                  scorer=seen(box), split=SPLIT, start_text="BUGGY = 1\n")
+    text = box[0][0][PATH]
+    assert "FIXED = 1" in text  # the agent's write wins; the start file is only used when it wrote nothing
 
 
 def test_error_or_missing_trajectory_is_unknown_and_not_scored():
@@ -99,7 +100,7 @@ class FakeSandbox:
     def __init__(self):
         self.starts = []
 
-    def reset(self, start=None):
+    def reset(self, start=None, handler=None):
         self.starts.append(start)
 
     def run_visible_tests(self):
@@ -127,3 +128,15 @@ def test_run_baseline_keeps_going_after_a_crash_and_records_everything(tmp_path)
     lines = (tmp_path / "trajectories.jsonl").read_text().splitlines()
     assert [json.loads(line)["task_id"] for line in lines] == ["implement-a", "implement-b"]
     assert json.loads((tmp_path / "summary.json").read_text())["summary"]["all"]["n"] == 3
+
+
+def test_malformed_calls_reads_multi_call_steps():
+    traj = {"steps": [{"action": {"tool_calls": [
+        {"name": "read_file", "arguments": {"path": "x"}}, {"name": "bogus", "arguments": {}}]}}]}
+    assert malformed_calls(traj) == 1
+
+
+def test_malformed_calls_openai_style_string_arguments():
+    ok = {"type": "function", "function": {"name": "read_file", "arguments": '{"path": "x"}'}}
+    bad = {"type": "function", "function": {"name": "read_file", "arguments": "{oops"}}
+    assert malformed_calls({"steps": [{"action": {"tool_calls": [ok, bad]}}]}) == 1

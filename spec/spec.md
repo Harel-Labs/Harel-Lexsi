@@ -103,9 +103,9 @@ Read-only handlers (`get_order`, `list_orders`, `view_shared_cart`) write nothin
 
 ## Holdout
 
-**TEMPORARY: the contracts below were drafted by an agent (Claude) for testing the pipeline. They are not the holdout. Replace them with team-written contracts before any training or evaluation run.**
+**Provenance:** the contracts below were drafted by an agent (Claude) and accepted by the team on 2026-11-13 (cleared by the user). Treat them as a reviewed baseline; the team may still replace or extend them.
 
-Written by the team, never by an agent. See `spec/contract-format.md` for the format.
+Normally written by the team, not by an agent. See `spec/contract-format.md` for the format.
 Target: 20–40 contracts. Each handler gets a happy-path contract plus one or more failure-path
 contracts. A failure path writes nothing.
 
@@ -124,7 +124,7 @@ contracts. A failure path writes nothing.
 
 ```yaml
 contracts:
-  # AGENT-DRAFTED FOR TESTING ONLY. Replace with team-written contracts before any real run.
+  # Agent-drafted, accepted by the team (see Provenance above).
 
   # --- cart ---
   - id: C-01

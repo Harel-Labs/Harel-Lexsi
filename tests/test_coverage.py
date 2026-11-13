@@ -87,6 +87,10 @@ def test_cli_passes_on_the_fixtures_and_fails_when_a_task_plan_is_missing(tmp_pa
 
 def test_cli_cannot_run_without_contracts_or_tasks(tmp_path, capsys):
     assert V.main([]) == 2
-    assert V.main(["--spec", str(G.ROOT / "spec" / "spec.md")]) == 2  # no contracts written yet (S1)
+    real = (G.ROOT / "spec" / "spec.md").read_text()
+    head, _, _ = real.partition("### Contracts")
+    empty = tmp_path / "spec.md"
+    empty.write_text(head + "### Contracts\n\n```yaml\ncontracts: []\n```\n")
+    assert V.main(["--spec", str(empty)]) == 2  # a spec with no holdout contracts
     assert "no contracts" in capsys.readouterr().err
     assert V.main(["--contracts", *map(str, G.DEFAULT_CONTRACTS), "--tasks", str(tmp_path / "nope.jsonl")]) == 2

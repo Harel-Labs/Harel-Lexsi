@@ -21,14 +21,18 @@ UNKNOWN = Settlement("c1", Verdict.UNKNOWN, "no evidence")
 
 
 def attempt(tid, content):
+    # the written file is real Python (writes are merged into the module); `content` is its label
     traj = {"steps": [{"action": {"name": "write_file",
-                                  "arguments": {"path": "app/handlers/cart.py", "content": content}}}]}
+                                  "arguments": {"path": "app/handlers/cart.py", "content": f"MARK = {content!r}\n"}}}]}
     return Attempt(tid, "add_to_cart", [{"role": "user", "content": "fix cart"}],
                    [{"role": "assistant", "content": content}], traj)
 
 
 def hooks(by_content):
-    return ClosedLoopHooks(TrainingBuffer(), lambda files, handler: by_content[files["app/handlers/cart.py"]])
+    def scorer(files, handler):
+        text = files["app/handlers/cart.py"]
+        return next(v for k, v in by_content.items() if f"MARK = {k!r}\n" in text)
+    return ClosedLoopHooks(TrainingBuffer(), scorer)
 
 
 def test_verified_repair_is_buffered_as_preference_pair():

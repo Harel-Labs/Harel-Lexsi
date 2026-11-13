@@ -146,3 +146,13 @@ def test_edited_start_file_is_refused(tmp_path):
     (tmp_path / "tasks.jsonl").write_text(json.dumps(task) + "\n")
     with pytest.raises(SandboxError):
         patch_start_for(task["prompt"], tmp_path)
+
+
+def test_tool_schemas_expose_real_parameters(tmp_path):
+    """The model's tool schema comes from the signature; a *args/**kwargs wrapper hides path/content."""
+    import inspect
+
+    harness = ShopHarness()
+    tools = make_tools(harness.sandbox)
+    assert list(inspect.signature(tools["write_file"]).parameters) == ["path", "content"]
+    assert list(inspect.signature(tools["read_file"]).parameters) == ["path"]

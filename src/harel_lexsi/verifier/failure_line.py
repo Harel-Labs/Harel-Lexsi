@@ -15,6 +15,7 @@ _TEMPLATES = {
     FailureClass.BROKEN_ATOMICITY: "step {step} left the work half done",
     FailureClass.WRONG_CARDINALITY: "step {step} changed the wrong number of records",
     FailureClass.WRONG_FINAL_STATE: "step {step} left the wrong final state",
+    FailureClass.DOES_NOT_LOAD: "step {step} left code that does not load",
 }
 
 

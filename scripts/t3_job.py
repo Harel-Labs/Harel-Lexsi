@@ -4,8 +4,8 @@
     uv run python scripts/t3_job.py check            # Postgres + verifier check on a CPU flavor (cents)
     uv run python scripts/t3_job.py train --yes      # the GRPO run on one L40S ($1.80/h)
 
-Needs `HF_JOBS_TOKEN` in .env: a token that may run Jobs for the user and the namespace (a fine-grained token
-with the Jobs permission, or a write token), and a positive credit balance in that namespace. `HF_TOKEN`
+Needs `HF_JOB_TOKEN` in .env: a token with the Jobs permission (`job.write`) for the namespace, and a positive
+credit balance there. The default namespace is the token's own user; the Lexsi org needs a token scoped to it. `HF_TOKEN`
 (read-only is enough) is passed to the job as a secret so it can download the gated Tiny Aya weights. Nothing
 from .env is uploaded: the staged copy leaves out .env, .git, .venv and runs/.
 
@@ -53,7 +53,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("mode", choices=["tests", "check", "train"])
     p.add_argument("--flavor", default=None)
-    p.add_argument("--namespace", default="Lexsi", help="whose credits and Jobs list: the org, or your user name")
+    p.add_argument("--namespace", default=None, help="whose credits and Jobs list; default: the token's own user")
     p.add_argument("--timeout", default=None)
     p.add_argument("--yes", action="store_true", help="confirm a job that costs money (train)")
     p.add_argument("--dry-run", action="store_true", help="stage and print what would be submitted, upload nothing")
@@ -63,7 +63,7 @@ def main() -> int:
     flavor = a.flavor or FLAVORS[a.mode]
     timeout = a.timeout or TIMEOUTS[a.mode]
     if a.mode == "train" and not a.yes and not a.dry_run:
-        print(f"This submits a training job on `{flavor}` (up to {timeout}) under `{a.namespace}`. Re-run with --yes.")
+        print(f"This submits a training job on `{flavor}` (up to {timeout}). Re-run with --yes.")
         return 2
 
     with tempfile.TemporaryDirectory(prefix="t3-stage-") as tmp:
@@ -71,20 +71,21 @@ def main() -> int:
         size = sum(f.stat().st_size for f in Path(tmp).rglob("*") if f.is_file()) / 1e6
         print(f"staged {size:.1f} MB: {sorted(x.name for x in Path(tmp).iterdir())}")
         if a.dry_run:
-            print(f"would run `{a.mode}` on {flavor} (timeout {timeout}) in namespace {a.namespace}")
+            print(f"would run `{a.mode}` on {flavor} (timeout {timeout}) in namespace {a.namespace or 'the token user'}")
             return 0
         from huggingface_hub import HfApi
 
-        token = os.environ.get("HF_JOBS_TOKEN")
+        token = os.environ.get("HF_JOB_TOKEN") or os.environ.get("HF_JOBS_TOKEN")
         if not token:
-            print("HF_JOBS_TOKEN is not set. Add a token that may run Jobs to .env (see this file's docstring).")
+            print("HF_JOB_TOKEN is not set. Add a token that may run Jobs to .env (see this file's docstring).")
             return 1
         api = HfApi(token=token)
+        a.namespace = a.namespace or api.whoami()["name"]
         volume = api.sync_job_volume(tmp, "/code")
         job = api.run_uv_job(
             str(ROOT / "scripts" / "job_entry.py"), script_args=[a.mode, *a.train_args],
             dependencies=DEPENDENCIES, flavor=flavor, timeout=timeout, namespace=a.namespace, volumes=[volume],
-            secrets={"HF_TOKEN": os.environ["HF_TOKEN"]}, env={"CODE_DIR": "/code", "PYTHONUNBUFFERED": "1"},
+            secrets={"HF_TOKEN": os.environ["HF_TOKEN"]}, env={"CODE_DIR": "/code", "PYTHONUNBUFFERED": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"},
             labels={"project": "harel-lexsi", "step": f"t3-{a.mode}"})
     print(f"submitted: {job.url}\nid: {job.id}\nlogs:   hf jobs logs {job.id} --namespace {a.namespace}")
     return 0

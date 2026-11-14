@@ -15,13 +15,13 @@ The launcher mounts the staged code at /code and starts this file with `hf jobs 
 from __future__ import annotations
 
 import os
-import runpy
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-CODE = Path(os.environ.get("CODE_DIR", "/code"))
+MOUNT = Path(os.environ.get("CODE_DIR", "/code"))  # the staged code: a read-only volume
+CODE = Path("/work")                                # a writable copy: editable installs write into it
 
 
 def sh(*cmd: str) -> None:
@@ -30,18 +30,23 @@ def sh(*cmd: str) -> None:
 
 
 def install_libs() -> None:
+    shutil.rmtree(CODE, ignore_errors=True)
+    shutil.copytree(MOUNT, CODE)
     py = sys.executable
     installer = [shutil.which("uv"), "pip", "install", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install"]
     for lib in ("AgentTune", "AuditKIT"):
         if (CODE / lib).is_dir():
             sh(*installer, "-e", str(CODE / lib))
-    sh(*installer, "-e", str(CODE / "Harel-Lexsi"))
+    # Installed, not just on PYTHONPATH: the verifier's scorer runs in a subprocess with a clean environment and
+    # must import harel_lexsi from site-packages. Without this every reward is UNKNOWN (0.0).
+    sh(*installer, "--no-deps", "-e", str(CODE / "Harel-Lexsi"))
+    os.environ["PYTHONPATH"] = os.pathsep.join([str(CODE / "Harel-Lexsi" / "src"), os.environ.get("PYTHONPATH", "")])
 
 
 def main() -> int:
     mode, rest = (sys.argv[1] if len(sys.argv) > 1 else "check"), sys.argv[2:]
     repo = CODE / "Harel-Lexsi"
-    print(f"[job] mode={mode} code={CODE} python={sys.version.split()[0]}", flush=True)
+    print(f"[job] mode={mode} mount={MOUNT} python={sys.version.split()[0]}", flush=True)
     install_libs()
     os.chdir(repo)
     sys.path.insert(0, str(repo / "scripts"))
@@ -55,13 +60,10 @@ def main() -> int:
     if mode == "tests":
         import train_t3
         train_t3.start_postgres()
-        return subprocess.call([sys.executable, "-m", "pytest", "tests", "-q", "-x", "-p", "no:cacheprovider"], cwd=repo)
-    sys.argv = [str(repo / "scripts" / "train_t3.py"), "--postgres", *(["--check"] if mode == "check" else []), *rest]
-    try:
-        runpy.run_path(str(repo / "scripts" / "train_t3.py"), run_name="__main__")
-    except SystemExit as e:
-        return int(e.code or 0)
-    return 0
+        return subprocess.call([sys.executable, "-m", "pytest", "tests", "-q", "-p", "no:cacheprovider"], cwd=repo)
+    # A fresh interpreter: libraries installed a moment ago are not importable in this already-running process.
+    cmd = [sys.executable, str(repo / "scripts" / "train_t3.py"), "--postgres", *(["--check"] if mode == "check" else []), *rest]
+    return subprocess.call(cmd, cwd=repo)
 
 
 if __name__ == "__main__":

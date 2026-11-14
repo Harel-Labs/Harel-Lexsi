@@ -40,6 +40,8 @@ LESSONS: dict[str, str] = {
                           "names, no more and no fewer."),
     "wrong_final_state": ("Check the values you store: quantities, totals and status flags must match the "
                           "description exactly."),
+    "does_not_load": ("Make sure your code runs before you finish: it must be valid Python, and every name "
+                      "it uses must be defined in the file or imported."),
 }
 
 # Things the governor must never mention or touch: the verifier, the contracts, the benchmark, the thresholds.

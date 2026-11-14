@@ -64,6 +64,23 @@ def tests_text(handler: str, test_source: str, limit: int = MAX_TEST_CHARS) -> s
     return "\n\n".join(parts)
 
 
+def first_turn_text(task_prompt: str, handler: str, target: str | None, tests_source: str, schema_sql: str,
+                    module_text: str | None) -> tuple[str, str, str]:
+    """The first user turn: the task plus what the builder cannot be expected to go and read.
+
+    Returns (text, tables, tests). Pure: the baseline's coach and the training dataset both call this, so
+    the model is trained on exactly the prompts it is measured on."""
+    tables = "The tables and their columns (use exactly these names):\n" + schema_digest(schema_sql)
+    tests = tests_text(handler, tests_source)
+    extra = [tables, (f"The visible tests that call `{handler}` (`h` is the handlers module):\n"
+                      f"```python\n{tests}\n```")]
+    current = function_source(module_text, handler) if module_text and target else None
+    if current:
+        extra.append(f"The function as it is now in `{target}`:\n```python\n{current}\n```")
+    extra.append("Reply with the complete function in one ```python block.")
+    return task_prompt + "\n\n" + "\n\n".join(extra), tables, tests
+
+
 class EpisodeCoach:
     def __init__(self, sandbox: ShopSandbox):
         self.sandbox = sandbox
@@ -86,18 +103,13 @@ class EpisodeCoach:
         self._seen_writes, self._repeats, self._previous = sb.writes, 0, None
         self._seen_refusals = sb.refusals
         self._original, self._mistakes = None, []
-        self._tests = tests_text(sb.handler, (sb.workspace / VISIBLE_TESTS).read_text())
-        self._tables = ("The tables and their columns (use exactly these names):\n"
-                        + schema_digest((sb.workspace / "app" / "schema.sql").read_text()))
-        extra = [self._tables, (f"The visible tests that call `{sb.handler}` (`h` is the handlers module):\n"
-                  f"```python\n{self._tests}\n```")]
         target = sb.target_path()
-        current = function_source((sb.workspace / target).read_text(), sb.handler) if target else None
-        self._original = current
-        if current:
-            extra.append(f"The function as it is now in `{target}`:\n```python\n{current}\n```")
-        extra.append("Reply with the complete function in one ```python block.")
-        conversation[-1] = {**conversation[-1], "content": self._task + "\n\n" + "\n\n".join(extra)}
+        module = (sb.workspace / target).read_text() if target else None
+        text, self._tables, self._tests = first_turn_text(
+            self._task, sb.handler, target, (sb.workspace / VISIBLE_TESTS).read_text(),
+            (sb.workspace / "app" / "schema.sql").read_text(), module)
+        self._original = function_source(module, sb.handler) if module else None
+        conversation[-1] = {**conversation[-1], "content": text}
 
     # ----- after every write: one compact repair request instead of a growing history -----
     def post_step(self, step: Any, conversation: list[dict] | None = None, **_: Any) -> list[dict] | None:

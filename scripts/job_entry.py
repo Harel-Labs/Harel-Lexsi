@@ -1,4 +1,6 @@
-"""Runs INSIDE a Hugging Face Job (see scripts/t3_job.py). Not meant to be run on a laptop.
+"""Runs INSIDE a Hugging Face Job (see scripts/hf_job.py). Not meant to be run on a laptop.
+
+`run <script> [args]` starts any script of the repo; the modes below are the T3 ones.
 
 The launcher mounts the staged code at /code and starts this file with `hf jobs uv run`-style dependencies
 (torch, trl, peft, ...). It then
@@ -29,12 +31,13 @@ def sh(*cmd: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def install_libs() -> None:
+def install_libs(mode: str = "tests") -> None:
     shutil.rmtree(CODE, ignore_errors=True)
     shutil.copytree(MOUNT, CODE)
     py = sys.executable
     installer = [shutil.which("uv"), "pip", "install", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install"]
-    for lib in ("AgentTune", "AuditKIT"):
+    need_auditkit = mode == "tests" or bool(os.environ.get("WITH_AUDITKIT"))  # the test suite and t8_eval use it
+    for lib in ("AgentTune", "AuditKIT") if need_auditkit else ("AgentTune",):
         if (CODE / lib).is_dir():
             sh(*installer, "-e", str(CODE / lib))
     # Installed, not just on PYTHONPATH: the verifier's scorer runs in a subprocess with a clean environment and
@@ -47,7 +50,7 @@ def main() -> int:
     mode, rest = (sys.argv[1] if len(sys.argv) > 1 else "check"), sys.argv[2:]
     repo = CODE / "Harel-Lexsi"
     print(f"[job] mode={mode} mount={MOUNT} python={sys.version.split()[0]}", flush=True)
-    install_libs()
+    install_libs(mode)
     os.chdir(repo)
     sys.path.insert(0, str(repo / "scripts"))
     sys.path.insert(0, str(repo / "src"))
@@ -62,6 +65,12 @@ def main() -> int:
         train_t3.start_postgres()
         return subprocess.call([sys.executable, "-m", "pytest", "tests", "-q", "-p", "no:cacheprovider"], cwd=repo)
     # A fresh interpreter: libraries installed a moment ago are not importable in this already-running process.
+    if mode == "run":  # any script of the repo: job_entry.py run scripts/t8_collect.py --pilot
+        script, rest = rest[0].removesuffix(".py") + ".py", rest[1:]  # sent without ".py": see hf_job.py
+        if not (repo / script).is_file():
+            print(f"[job] no such script in the repo: {script}", flush=True)
+            return 2
+        return subprocess.call([sys.executable, str(repo / script), *rest], cwd=repo)
     cmd = [sys.executable, str(repo / "scripts" / "train_t3.py"), "--postgres", *(["--check"] if mode == "check" else []), *rest]
     return subprocess.call(cmd, cwd=repo)
 

@@ -100,5 +100,17 @@ def make_hosted_engine(*, api_model: str, api_key: str, base_url: str, tokenizer
                 out["completions_structured"][0] = {"role": "assistant", "content": call}
         return out
 
-    engine.generate = text_only
+    engine.usage = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+    counted = text_only
+
+    def with_usage(prompts, tools=None, gen_cfg=None):
+        out = counted(prompts, tools=tools, gen_cfg=gen_cfg)
+        meta = out.get("metadata") or {}
+        if "prompt_tokens" in meta:
+            engine.usage["calls"] += 1
+            engine.usage["prompt_tokens"] += int(meta.get("prompt_tokens") or 0)
+            engine.usage["completion_tokens"] += int(meta.get("completion_tokens") or 0)
+        return out
+
+    engine.generate = with_usage
     return engine

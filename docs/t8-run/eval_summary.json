@@ -1,0 +1,358 @@
+{
+  "heldout": {
+    "n": 8,
+    "base": 0.125,
+    "new": 0.125,
+    "delta": 0.0,
+    "p_value": 1.0,
+    "significant": false
+  },
+  "mutation": {
+    "n": 11,
+    "base": 0.34545454545454546,
+    "new": 0.34545454545454546,
+    "delta": 0.0,
+    "p_value": 1.0,
+    "significant": false
+  },
+  "heldout_visible": {
+    "n": 8,
+    "base": 0.45,
+    "new": 0.55,
+    "delta": 0.10000000000000003,
+    "p_value": 0.074985,
+    "significant": false
+  },
+  "mutation_visible": {
+    "n": 11,
+    "base": 0.7454545454545454,
+    "new": 0.8181818181818182,
+    "delta": 0.07272727272727286,
+    "p_value": 0.255549,
+    "significant": false
+  },
+  "episode_stats": {
+    "heldout": {
+      "base": {
+        "episodes": 40,
+        "visible_rate": 0.45,
+        "refused_share": 0.14124293785310735
+      },
+      "trained": {
+        "episodes": 40,
+        "visible_rate": 0.55,
+        "refused_share": 0.047619047619047616
+      }
+    },
+    "mutation": {
+      "base": {
+        "episodes": 55,
+        "visible_rate": 0.7454545454545455,
+        "refused_share": 0.11931818181818182
+      },
+      "trained": {
+        "episodes": 55,
+        "visible_rate": 0.8181818181818182,
+        "refused_share": 0.07692307692307693
+      }
+    }
+  },
+  "per_task": {
+    "base": {
+      "implement-cancel_order": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-remove_from_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      },
+      "patch-get_order": {
+        "n": 5,
+        "verified": 5,
+        "visible": 5,
+        "rate": 1.0,
+        "visible_rate": 1.0
+      },
+      "patch-cancel_order": {
+        "n": 5,
+        "verified": 5,
+        "visible": 5,
+        "rate": 1.0,
+        "visible_rate": 1.0
+      },
+      "implement-update_cart_item": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "implement-import_shared_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-share_cart": {
+        "n": 5,
+        "verified": 1,
+        "visible": 5,
+        "rate": 0.2,
+        "visible_rate": 1.0
+      },
+      "patch-import_shared_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 4,
+        "rate": 0.0,
+        "visible_rate": 0.8
+      },
+      "patch-checkout": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-add_to_cart": {
+        "n": 5,
+        "verified": 2,
+        "visible": 2,
+        "rate": 0.4,
+        "visible_rate": 0.4
+      },
+      "patch-remove_coupon": {
+        "n": 5,
+        "verified": 0,
+        "visible": 3,
+        "rate": 0.0,
+        "visible_rate": 0.6
+      },
+      "patch-clear_cart": {
+        "n": 5,
+        "verified": 3,
+        "visible": 4,
+        "rate": 0.6,
+        "visible_rate": 0.8
+      },
+      "patch-apply_coupon": {
+        "n": 5,
+        "verified": 3,
+        "visible": 3,
+        "rate": 0.6,
+        "visible_rate": 0.6
+      },
+      "implement-remove_coupon": {
+        "n": 5,
+        "verified": 0,
+        "visible": 1,
+        "rate": 0.0,
+        "visible_rate": 0.2
+      },
+      "patch-update_cart_item": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      }
+    },
+    "trained": {
+      "implement-cancel_order": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-remove_from_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      },
+      "patch-get_order": {
+        "n": 5,
+        "verified": 4,
+        "visible": 4,
+        "rate": 0.8,
+        "visible_rate": 0.8
+      },
+      "patch-cancel_order": {
+        "n": 5,
+        "verified": 5,
+        "visible": 5,
+        "rate": 1.0,
+        "visible_rate": 1.0
+      },
+      "implement-update_cart_item": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "implement-import_shared_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-share_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      },
+      "patch-import_shared_cart": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      },
+      "patch-checkout": {
+        "n": 5,
+        "verified": 0,
+        "visible": 0,
+        "rate": 0.0,
+        "visible_rate": 0.0
+      },
+      "patch-add_to_cart": {
+        "n": 5,
+        "verified": 1,
+        "visible": 1,
+        "rate": 0.2,
+        "visible_rate": 0.2
+      },
+      "patch-remove_coupon": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      },
+      "patch-clear_cart": {
+        "n": 5,
+        "verified": 4,
+        "visible": 5,
+        "rate": 0.8,
+        "visible_rate": 1.0
+      },
+      "patch-apply_coupon": {
+        "n": 5,
+        "verified": 5,
+        "visible": 5,
+        "rate": 1.0,
+        "visible_rate": 1.0
+      },
+      "implement-remove_coupon": {
+        "n": 5,
+        "verified": 0,
+        "visible": 2,
+        "rate": 0.0,
+        "visible_rate": 0.4
+      },
+      "patch-update_cart_item": {
+        "n": 5,
+        "verified": 0,
+        "visible": 5,
+        "rate": 0.0,
+        "visible_rate": 1.0
+      }
+    }
+  },
+  "decision": {
+    "decision": "keep_old",
+    "reasons": [
+      "held-out gain +0% is below the required +10%"
+    ],
+    "numbers": {
+      "heldout": {
+        "n": 8,
+        "base": 0.125,
+        "new": 0.125,
+        "significant": false
+      },
+      "mutation": {
+        "n": 11,
+        "base": 0.34545454545454546,
+        "new": 0.34545454545454546
+      }
+    },
+    "thresholds_sha256": "4fd061d678c3a2ff61d8366ecfd6db17c4208f956722d38b6b004b5100f38b06"
+  },
+  "adapter": "adapter",
+  "adapter_provenance": {
+    "purpose": "T8 DPO adapter",
+    "base_model": "CohereLabs/tiny-aya-global",
+    "base_revision": "af89d219b53ed9b13b8a4645f9c8028973510324",
+    "git_sha": "fb1bbbe1d9712b73aac9b74b5d9090226b9653e2",
+    "split_sha256": "4ba8b7f6ac3159975cbe0cca0abdcc4b9a86347faf7661f5aa3ebb31bdfab77f",
+    "spec_sha256": "2e3720f63a464e8257443943c29995b41810258f262668fd24ab4eb5d5799625",
+    "tasks_sha256": "7ab8778ca87411441cad01509d7d0c4e18222afb2f18a01b9dadf7e52d785770",
+    "collection_run": "collect-20261114-164908",
+    "pair_rule": "strict",
+    "pairs_train_sha256": "bde201771c2824f1095796083672291fc26e2b64cccfdf26acbc729962e38346",
+    "pairs_eval_sha256": "8d511f0de798e57fc13af361443e4e2693fd4a69f8e68571d44f02f6c059f10a",
+    "train_pairs": 303,
+    "eval_pairs": 30,
+    "train_tasks": [
+      "implement-get_order",
+      "implement-list_orders",
+      "implement-remove_from_cart",
+      "implement-share_cart",
+      "patch-add_to_cart",
+      "patch-apply_coupon",
+      "patch-checkout",
+      "patch-clear_cart",
+      "patch-get_order",
+      "patch-share_cart"
+    ],
+    "held_out_in_training": false,
+    "hyperparameters": {
+      "epochs": 2.0,
+      "lr": 2e-05,
+      "beta": 0.1,
+      "micro_batch": 1,
+      "grad_accum": 8,
+      "max_length": 6144,
+      "seed": 0,
+      "lora": {
+        "r": 16,
+        "alpha": 32,
+        "targets": "all-linear"
+      }
+    },
+    "train_seconds": 1778,
+    "final_log": {
+      "train_runtime": 1755.4524,
+      "train_samples_per_second": 0.345,
+      "train_steps_per_second": 0.043,
+      "total_flos": 8.28483021644759e+16,
+      "train_loss": 0.295239271792142,
+      "epoch": 2.0,
+      "step": 76
+    },
+    "result": "{'model': 'Cohere2ForCausalLM(\\n  (model): Cohere2Model(\\n    (embed_tokens): Embedding(262144, 2048, padding_idx=0)\\n    (layers): ModuleList(\\n      (0-35): 36 x Cohere2DecoderLayer(\\n        (self_attn): Cohere2Attention(\\n          (q_proj): lora.Linear(\\n            (base_layer): Linear(in_feat"
+  },
+  "settings": {
+    "temperature": 0.9,
+    "top_p": 0.75,
+    "max_new_tokens": 768,
+    "max_steps": 8,
+    "samples": 5
+  },
+  "rules_sha256": "89cb5720f0ef2377f36b0954638f93db686cb2758b290055ae1358ba1fb9f02b"
+}

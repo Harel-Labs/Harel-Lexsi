@@ -1,0 +1,20 @@
+{
+  "verifier": {
+    "pairs": 373,
+    "train_pairs": 339,
+    "eval_pairs": 34,
+    "tasks_with_pairs": 11,
+    "hard_negative_share": 0.04,
+    "invalid_share": 0.078,
+    "go": true
+  },
+  "strict": {
+    "pairs": 333,
+    "train_pairs": 303,
+    "eval_pairs": 30,
+    "tasks_with_pairs": 10,
+    "hard_negative_share": 0.045,
+    "invalid_share": 0.087,
+    "go": true
+  }
+}

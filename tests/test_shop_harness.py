@@ -156,3 +156,23 @@ def test_tool_schemas_expose_real_parameters(tmp_path):
     tools = make_tools(harness.sandbox)
     assert list(inspect.signature(tools["write_file"]).parameters) == ["path", "content"]
     assert list(inspect.signature(tools["read_file"]).parameters) == ["path"]
+
+
+def test_every_write_attempt_is_recorded_refused_ones_too():
+    """The preference pairs are built from these: a refused (not Python) attempt is a negative example."""
+    from harel_lexsi.adapters.shop_harness import SandboxError, ShopSandbox
+
+    sb = ShopSandbox()
+    try:
+        sb.reset(handler="clear_cart")
+        with pytest.raises(SandboxError):
+            sb.write_file("app/handlers/cart.py", "def clear_cart(conn, user_id:\n")
+        sb.write_file("app/handlers/cart.py", "def clear_cart(conn, user_id):\n    return {'cleared': 0}\n")
+        a = sb.attempts
+        assert [x["accepted"] for x in a] == [False, True]
+        assert "not valid Python" in a[0]["refusal"] and a[0]["content"].startswith("def clear_cart")
+        assert set(a[1]["tests"]) == {"passed", "failed", "failures"}
+        sb.reset(handler="clear_cart")
+        assert sb.attempts == []  # a new episode starts a new log
+    finally:
+        sb.close()

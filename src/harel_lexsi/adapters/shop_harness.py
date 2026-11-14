@@ -145,6 +145,7 @@ class ShopSandbox:
         self.last_write: str | None = None   # content of the latest write, to notice a repeat
         self.writes = 0                      # accepted writes this episode
         self.refusals = 0                    # writes refused because the text was not Python
+        self.attempts: list[dict] = []       # every write this episode, refused ones too (preference pairs)
         self.last_refusal: tuple[str, str] | None = None  # (why, the text)
 
     # ----- lifecycle -----
@@ -155,6 +156,7 @@ class ShopSandbox:
         self.close()
         self.handler, self.last_tests, self.last_write, self.writes = handler, None, None, 0
         self.refusals, self.last_refusal = 0, None
+        self.attempts = []
         self.workspace = Path(tempfile.mkdtemp(prefix="shop-episode-")).resolve()
         ignore = shutil.ignore_patterns("__pycache__", "*.pyc")
         shutil.copytree(self.shop / "app", self.workspace / "app", ignore=ignore)
@@ -245,6 +247,7 @@ class ShopSandbox:
         except NotPython as e:
             self.refusals += 1
             self.last_refusal = (str(e), content)
+            self.attempts.append({"content": content, "accepted": False, "refusal": str(e)})
             raise SandboxError(f"{e}. Nothing was written.") from None
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(merged)
@@ -259,6 +262,7 @@ class ShopSandbox:
                 result["note"] = "All visible tests for your handler pass. Call finish."
         self.last_write = content
         self.writes += 1
+        self.attempts.append({"content": content, "accepted": True, "tests": result.get("tests")})
         return result
 
     def run_visible_tests(self) -> dict:

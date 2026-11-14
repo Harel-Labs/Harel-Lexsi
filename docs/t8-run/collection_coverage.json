@@ -1,0 +1,142 @@
+{
+  "tasks": 16,
+  "tasks_with_a_pass": 11,
+  "tasks_with_pairs": 11,
+  "pairs": 373,
+  "hard_negative_share": 0.04,
+  "invalid_share": 0.078,
+  "rejected_classes": {
+    "wrong_final_state": 327,
+    "invalid_python": 29,
+    "missing_write": 185,
+    "undeclared_write": 21,
+    "missing_event": 87,
+    "broken_atomicity": 9,
+    "does_not_load": 4
+  },
+  "per_task": {
+    "implement-add_to_cart": {
+      "candidates": 72,
+      "pass": 0,
+      "fail": 72,
+      "unknown": 0,
+      "pairs": 0
+    },
+    "implement-remove_from_cart": {
+      "candidates": 50,
+      "pass": 6,
+      "fail": 44,
+      "unknown": 0,
+      "pairs": 40
+    },
+    "implement-clear_cart": {
+      "candidates": 72,
+      "pass": 0,
+      "fail": 72,
+      "unknown": 0,
+      "pairs": 0
+    },
+    "implement-apply_coupon": {
+      "candidates": 85,
+      "pass": 0,
+      "fail": 85,
+      "unknown": 0,
+      "pairs": 0
+    },
+    "implement-checkout": {
+      "candidates": 76,
+      "pass": 0,
+      "fail": 76,
+      "unknown": 0,
+      "pairs": 0
+    },
+    "implement-get_order": {
+      "candidates": 36,
+      "pass": 1,
+      "fail": 35,
+      "unknown": 0,
+      "pairs": 35
+    },
+    "implement-list_orders": {
+      "candidates": 74,
+      "pass": 10,
+      "fail": 64,
+      "unknown": 0,
+      "pairs": 40
+    },
+    "implement-share_cart": {
+      "candidates": 53,
+      "pass": 1,
+      "fail": 52,
+      "unknown": 0,
+      "pairs": 40
+    },
+    "implement-view_shared_cart": {
+      "candidates": 51,
+      "pass": 2,
+      "fail": 49,
+      "unknown": 0,
+      "pairs": 40
+    },
+    "patch-add_to_cart": {
+      "candidates": 74,
+      "pass": 1,
+      "fail": 73,
+      "unknown": 0,
+      "pairs": 40
+    },
+    "patch-remove_from_cart": {
+      "candidates": 3,
+      "pass": 0,
+      "fail": 3,
+      "unknown": 0,
+      "pairs": 0
+    },
+    "patch-clear_cart": {
+      "candidates": 32,
+      "pass": 3,
+      "fail": 29,
+      "unknown": 0,
+      "pairs": 29
+    },
+    "patch-apply_coupon": {
+      "candidates": 22,
+      "pass": 10,
+      "fail": 12,
+      "unknown": 0,
+      "pairs": 12
+    },
+    "patch-checkout": {
+      "candidates": 67,
+      "pass": 2,
+      "fail": 65,
+      "unknown": 0,
+      "pairs": 38
+    },
+    "patch-get_order": {
+      "candidates": 45,
+      "pass": 15,
+      "fail": 30,
+      "unknown": 0,
+      "pairs": 30
+    },
+    "patch-share_cart": {
+      "candidates": 30,
+      "pass": 1,
+      "fail": 29,
+      "unknown": 0,
+      "pairs": 29
+    }
+  },
+  "name": "collect-20261114-164908",
+  "episodes_run": 270,
+  "episode_errors": 0,
+  "episodes_ending_green": 102,
+  "writes": 1237,
+  "refused_writes": 161,
+  "train_pairs": 339,
+  "eval_pairs": 34,
+  "wall_seconds": 6052,
+  "go": true,
+  "no_go_reasons": []
+}

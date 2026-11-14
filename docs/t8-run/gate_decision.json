@@ -1,0 +1,20 @@
+{
+  "decision": "keep_old",
+  "reasons": [
+    "held-out gain +0% is below the required +10%"
+  ],
+  "numbers": {
+    "heldout": {
+      "n": 8,
+      "base": 0.125,
+      "new": 0.125,
+      "significant": false
+    },
+    "mutation": {
+      "n": 11,
+      "base": 0.34545454545454546,
+      "new": 0.34545454545454546
+    }
+  },
+  "thresholds_sha256": "4fd061d678c3a2ff61d8366ecfd6db17c4208f956722d38b6b004b5100f38b06"
+}

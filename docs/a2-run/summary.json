@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "judge_model": "CohereLabs/c4ai-command-a-03-2025",
+    "judge_temperature": 0,
+    "rubric_sha256": "4ba14188564657281d2619f701a638f60ab64534f43aa0c46027b549473624dd",
+    "approve_at": 1.0,
+    "fixture_contracts": 9,
+    "hidden_contracts": 43,
+    "rules": "docs/a2-plan.md",
+    "git_sha": "6687c835fe13dade589847282f6736a754bb7733",
+    "run": "a2-20261114-211705"
+  },
+  "summary": {
+    "broken": {
+      "verifier_fixtures": {
+        "n": 19,
+        "approved": 0,
+        "rejected": 19,
+        "unknown": 0
+      },
+      "verifier_hidden_contracts": {
+        "n": 19,
+        "approved": 0,
+        "rejected": 19,
+        "unknown": 0
+      },
+      "judge_with_tests": {
+        "n": 19,
+        "approved": 0,
+        "rejected": 19,
+        "unknown": 0
+      },
+      "judge_code_only": {
+        "n": 19,
+        "approved": 0,
+        "rejected": 19,
+        "unknown": 0
+      },
+      "judge_with_tests_loose_line": {
+        "n": 19,
+        "approved": 19,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "judge_code_only_loose_line": {
+        "n": 19,
+        "approved": 19,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "pass_visible_tests": 9
+    },
+    "mutants": {
+      "verifier_fixtures": {
+        "n": 17,
+        "approved": 0,
+        "rejected": 17,
+        "unknown": 0
+      },
+      "verifier_hidden_contracts": {
+        "n": 17,
+        "approved": 0,
+        "rejected": 17,
+        "unknown": 0
+      },
+      "judge_with_tests": {
+        "n": 17,
+        "approved": 0,
+        "rejected": 17,
+        "unknown": 0
+      },
+      "judge_code_only": {
+        "n": 17,
+        "approved": 0,
+        "rejected": 17,
+        "unknown": 0
+      },
+      "judge_with_tests_loose_line": {
+        "n": 17,
+        "approved": 17,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "judge_code_only_loose_line": {
+        "n": 17,
+        "approved": 17,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "pass_visible_tests": 7
+    },
+    "traps": {
+      "verifier_fixtures": {
+        "n": 2,
+        "approved": 0,
+        "rejected": 2,
+        "unknown": 0
+      },
+      "verifier_hidden_contracts": {
+        "n": 2,
+        "approved": 0,
+        "rejected": 2,
+        "unknown": 0
+      },
+      "judge_with_tests": {
+        "n": 2,
+        "approved": 0,
+        "rejected": 2,
+        "unknown": 0
+      },
+      "judge_code_only": {
+        "n": 2,
+        "approved": 0,
+        "rejected": 2,
+        "unknown": 0
+      },
+      "judge_with_tests_loose_line": {
+        "n": 2,
+        "approved": 2,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "judge_code_only_loose_line": {
+        "n": 2,
+        "approved": 2,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "pass_visible_tests": 2
+    },
+    "control": {
+      "verifier_fixtures": {
+        "n": 6,
+        "approved": 6,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "verifier_hidden_contracts": {
+        "n": 6,
+        "approved": 6,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "judge_with_tests": {
+        "n": 6,
+        "approved": 2,
+        "rejected": 4,
+        "unknown": 0
+      },
+      "judge_code_only": {
+        "n": 6,
+        "approved": 1,
+        "rejected": 5,
+        "unknown": 0
+      },
+      "judge_with_tests_loose_line": {
+        "n": 6,
+        "approved": 6,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "judge_code_only_loose_line": {
+        "n": 6,
+        "approved": 6,
+        "rejected": 0,
+        "unknown": 0
+      },
+      "pass_visible_tests": 6
+    },
+    "approve_at": 1.0,
+    "loose_at": 0.5
+  }
+}

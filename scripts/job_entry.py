@@ -36,7 +36,8 @@ def install_libs(mode: str = "tests") -> None:
     shutil.copytree(MOUNT, CODE)
     py = sys.executable
     installer = [shutil.which("uv"), "pip", "install", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install"]
-    for lib in ("AgentTune", "AuditKIT") if mode == "tests" else ("AgentTune",):  # AuditKIT only for the test suite
+    need_auditkit = mode == "tests" or bool(os.environ.get("WITH_AUDITKIT"))  # the test suite and t8_eval use it
+    for lib in ("AgentTune", "AuditKIT") if need_auditkit else ("AgentTune",):
         if (CODE / lib).is_dir():
             sh(*installer, "-e", str(CODE / lib))
     # Installed, not just on PYTHONPATH: the verifier's scorer runs in a subprocess with a clean environment and

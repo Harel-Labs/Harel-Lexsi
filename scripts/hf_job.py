@@ -63,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", default=None)
     p.add_argument("--secret", action="append", default=[], help="name of an env var to pass as a job secret")
     p.add_argument("--yes", action="store_true", help="confirm a job on a GPU flavor")
+    p.add_argument("--with-auditkit", action="store_true", help="install AuditKIT in the job (tests and t8_eval need it)")
     p.add_argument("--dry-run", action="store_true", help="stage and print what would be submitted, upload nothing")
     p.add_argument("job_args", nargs="*", help="after --: arguments for the script")
     a = p.parse_args(argv)
@@ -112,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
             flavor=flavor, timeout=timeout, namespace=namespace, volumes=volumes,
             secrets={"HF_TOKEN": os.environ["HF_TOKEN"], **{s: os.environ[s] for s in a.secret}},
             env={"CODE_DIR": "/code", "OUT_DIR": "/out", "PYTHONUNBUFFERED": "1", "GIT_SHA": sha,
-                 "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"},
+                 "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+                 "WITH_AUDITKIT": "1" if a.with_auditkit else ""},
             labels={"project": "harel-lexsi", "step": (a.script or a.mode).replace("/", "-").replace(".py", "")[:40]})
     print(f"submitted: {job.url}\nid: {job.id}")
     return 0

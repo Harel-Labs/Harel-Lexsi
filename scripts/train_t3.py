@@ -42,7 +42,7 @@ def sh(cmd: str, **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, shell=True, check=True, text=True, **kw)
 
 
-def start_postgres(port: int = 5433) -> None:
+def start_postgres(port: int = 5433, extra_databases: tuple[str, ...] = ()) -> None:
     """Install and start a throwaway Postgres with logical decoding, as the shop's docker-compose does.
 
     For a Job container (Debian, root). The data directory is in /tmp and fsync is off: it is disposable.
@@ -60,6 +60,8 @@ def start_postgres(port: int = 5433) -> None:
     psql = f"su postgres -c \"{bindir}/psql -p {port} -qAt -c \\\"%s\\\"\""
     sh(psql % "CREATE ROLE shop SUPERUSER LOGIN PASSWORD 'shop'")
     sh(psql % "CREATE DATABASE shop OWNER shop")
+    for name in extra_databases:  # one database per parallel worker: episodes reset and replay their own
+        sh(psql % f"CREATE DATABASE {name} OWNER shop")
     os.environ.setdefault("SHOP_DSN", f"postgresql://shop:shop@localhost:{port}/shop")
     print(f"[t3] postgres up on :{port}", flush=True)
 

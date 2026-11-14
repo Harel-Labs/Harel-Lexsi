@@ -1,4 +1,6 @@
-"""Runs INSIDE a Hugging Face Job (see scripts/t3_job.py). Not meant to be run on a laptop.
+"""Runs INSIDE a Hugging Face Job (see scripts/hf_job.py). Not meant to be run on a laptop.
+
+`run <script> [args]` starts any script of the repo; the modes below are the T3 ones.
 
 The launcher mounts the staged code at /code and starts this file with `hf jobs uv run`-style dependencies
 (torch, trl, peft, ...). It then
@@ -62,6 +64,12 @@ def main() -> int:
         train_t3.start_postgres()
         return subprocess.call([sys.executable, "-m", "pytest", "tests", "-q", "-p", "no:cacheprovider"], cwd=repo)
     # A fresh interpreter: libraries installed a moment ago are not importable in this already-running process.
+    if mode == "run":  # any script of the repo: job_entry.py run scripts/t8_collect.py --pilot
+        script, rest = rest[0], rest[1:]
+        if not (repo / script).is_file():
+            print(f"[job] no such script in the repo: {script}", flush=True)
+            return 2
+        return subprocess.call([sys.executable, str(repo / script), *rest], cwd=repo)
     cmd = [sys.executable, str(repo / "scripts" / "train_t3.py"), "--postgres", *(["--check"] if mode == "check" else []), *rest]
     return subprocess.call(cmd, cwd=repo)
 

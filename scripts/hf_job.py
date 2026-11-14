@@ -102,13 +102,16 @@ def main(argv: list[str] | None = None) -> int:
         if missing:
             print(f"secret(s) not set in the environment or .env: {missing}")
             return 1
+        import subprocess
+        git = lambda *c: subprocess.run(["git", *c], cwd=ROOT, capture_output=True, text=True).stdout.strip()  # noqa: E731
+        sha = git("rev-parse", "HEAD") + ("+uncommitted" if git("status", "--porcelain", "--untracked-files=no") else "")
         volumes = [api.sync_job_volume(str(code), "/code"),
                    api.sync_job_volume(str(marker), "/out", remote_name=OUT_FOLDER, read_only=False)]  # never deletes
         job = api.run_uv_job(
             str(ROOT / "scripts" / "job_entry.py"), script_args=entry_args, dependencies=DEPENDENCIES,
             flavor=flavor, timeout=timeout, namespace=namespace, volumes=volumes,
             secrets={"HF_TOKEN": os.environ["HF_TOKEN"], **{s: os.environ[s] for s in a.secret}},
-            env={"CODE_DIR": "/code", "OUT_DIR": "/out", "PYTHONUNBUFFERED": "1",
+            env={"CODE_DIR": "/code", "OUT_DIR": "/out", "PYTHONUNBUFFERED": "1", "GIT_SHA": sha,
                  "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"},
             labels={"project": "harel-lexsi", "step": (a.script or a.mode).replace("/", "-").replace(".py", "")[:40]})
     print(f"submitted: {job.url}\nid: {job.id}")

@@ -1,0 +1,53 @@
+{
+  "purpose": "T8 DPO adapter",
+  "base_model": "CohereLabs/tiny-aya-global",
+  "base_revision": "af89d219b53ed9b13b8a4645f9c8028973510324",
+  "git_sha": "fb1bbbe1d9712b73aac9b74b5d9090226b9653e2",
+  "split_sha256": "4ba8b7f6ac3159975cbe0cca0abdcc4b9a86347faf7661f5aa3ebb31bdfab77f",
+  "spec_sha256": "2e3720f63a464e8257443943c29995b41810258f262668fd24ab4eb5d5799625",
+  "tasks_sha256": "7ab8778ca87411441cad01509d7d0c4e18222afb2f18a01b9dadf7e52d785770",
+  "collection_run": "collect-20261114-164908",
+  "pair_rule": "strict",
+  "pairs_train_sha256": "bde201771c2824f1095796083672291fc26e2b64cccfdf26acbc729962e38346",
+  "pairs_eval_sha256": "8d511f0de798e57fc13af361443e4e2693fd4a69f8e68571d44f02f6c059f10a",
+  "train_pairs": 303,
+  "eval_pairs": 30,
+  "train_tasks": [
+    "implement-get_order",
+    "implement-list_orders",
+    "implement-remove_from_cart",
+    "implement-share_cart",
+    "patch-add_to_cart",
+    "patch-apply_coupon",
+    "patch-checkout",
+    "patch-clear_cart",
+    "patch-get_order",
+    "patch-share_cart"
+  ],
+  "held_out_in_training": false,
+  "hyperparameters": {
+    "epochs": 2.0,
+    "lr": 2e-05,
+    "beta": 0.1,
+    "micro_batch": 1,
+    "grad_accum": 8,
+    "max_length": 6144,
+    "seed": 0,
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "targets": "all-linear"
+    }
+  },
+  "train_seconds": 1778,
+  "final_log": {
+    "train_runtime": 1755.4524,
+    "train_samples_per_second": 0.345,
+    "train_steps_per_second": 0.043,
+    "total_flos": 8.28483021644759e+16,
+    "train_loss": 0.295239271792142,
+    "epoch": 2.0,
+    "step": 76
+  },
+  "result": "{'model': 'Cohere2ForCausalLM(\\n  (model): Cohere2Model(\\n    (embed_tokens): Embedding(262144, 2048, padding_idx=0)\\n    (layers): ModuleList(\\n      (0-35): 36 x Cohere2DecoderLayer(\\n        (self_attn): Cohere2Attention(\\n          (q_proj): lora.Linear(\\n            (base_layer): Linear(in_feat"
+}

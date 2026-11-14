@@ -75,7 +75,10 @@ def main(argv: list[str] | None = None) -> int:
     if on_gpu and not a.yes and not a.dry_run:
         print(f"This submits a job on `{flavor}` (up to {timeout}), which costs money. Re-run with --yes.")
         return 2
-    entry_args = [a.mode, *([a.script] if a.mode == "run" else []), *a.job_args]
+    # HF's uv runner uploads any argument that is a real local file and rewrites it to /data/<name> (the script then runs
+    # outside the repo: wrong ROOT, no sibling scripts), and rejects a *.py argument that is not a local file. So the
+    # script goes without its ".py"; job_entry adds it back.
+    entry_args = [a.mode, *([a.script.removesuffix(".py")] if a.mode == "run" else []), *a.job_args]
 
     with tempfile.TemporaryDirectory(prefix="hf-job-") as tmp:
         code, marker = Path(tmp) / "code", Path(tmp) / "out"

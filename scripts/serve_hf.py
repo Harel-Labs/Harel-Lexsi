@@ -46,14 +46,15 @@ def load(model_id: str, revision: str, adapter: str | None):
 
 
 class Batcher:
-    def __init__(self, tok, model, max_batch: int, wait_s: float):
+    def __init__(self, tok, model, max_batch: int, wait_s: float, top_p: float = 0.75, top_k: int = 0):
         self.tok, self.model, self.max_batch, self.wait_s = tok, model, max_batch, wait_s
+        self.top_p, self.top_k = top_p, top_k  # the provider's default nucleus (p=0.75); unrestricted sampling drifts
         self.q: queue.Queue = queue.Queue()
         self.served = self.batches = self.seqs = 0
         threading.Thread(target=self.loop, daemon=True).start()
 
-    def submit(self, messages: list[dict], max_tokens: int, temperature: float) -> dict:
-        item = {"messages": messages, "max_tokens": max_tokens, "temperature": temperature,
+    def submit(self, messages: list[dict], max_tokens: int, temperature: float, top_p: float | None = None) -> dict:
+        item = {"messages": messages, "max_tokens": max_tokens, "temperature": temperature, "top_p": top_p,
                 "done": threading.Event(), "result": None}
         self.q.put(item)
         item["done"].wait()
@@ -102,11 +103,13 @@ class Batcher:
         n_prompt = enc["input_ids"].shape[1]
         temp = max(b["temperature"] for b in batch)
         sample = temp > 0
+        asked = [b["top_p"] for b in batch if b.get("top_p")]
+        top_p = min(asked) if asked else self.top_p  # a batch shares one setting: the most restrictive request wins
         with torch.inference_mode():
             out = self.model.generate(
                 **enc, max_new_tokens=max(b["max_tokens"] for b in batch), do_sample=sample,
-                temperature=temp if sample else None, top_p=1.0 if sample else None, top_k=0 if sample else None,
-                pad_token_id=tok.pad_token_id)
+                temperature=temp if sample else None, top_p=top_p if sample else None,
+                top_k=self.top_k if sample else None, pad_token_id=tok.pad_token_id)
         eos = {tok.eos_token_id, *(self.model.generation_config.eos_token_id if isinstance(
             self.model.generation_config.eos_token_id, list) else [self.model.generation_config.eos_token_id])} - {None}
         results = []
@@ -152,7 +155,8 @@ def make_handler(batcher: Batcher, name: str):
             try:
                 req = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
                 res = batcher.submit(req["messages"], int(req.get("max_tokens") or 512),
-                                     float(req.get("temperature") if req.get("temperature") is not None else 0.7))
+                                     float(req.get("temperature") if req.get("temperature") is not None else 0.7),
+                                     float(req["top_p"]) if req.get("top_p") else None)
             except Exception as e:  # noqa: BLE001
                 return self._send(400, {"error": {"message": f"{type(e).__name__}: {e}"[:300]}})
             if "error" in res:
@@ -174,11 +178,14 @@ def main() -> int:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--max-batch", type=int, default=16)
     p.add_argument("--wait-ms", type=float, default=40.0)
+    p.add_argument("--top-p", type=float, default=0.75, help="nucleus sampling (the hosted provider's default)")
+    p.add_argument("--top-k", type=int, default=0, help="0 = off")
     a = p.parse_args()
     t = time.time()
     tok, model = load(a.model, a.revision, a.adapter)
     print(f"[serve] model ready in {time.time() - t:.0f}s on port {a.port}, max batch {a.max_batch}", flush=True)
-    batcher = Batcher(tok, model, a.max_batch, a.wait_ms / 1000)
+    batcher = Batcher(tok, model, a.max_batch, a.wait_ms / 1000, a.top_p, a.top_k)
+    print(f"[serve] sampling: top_p={a.top_p} top_k={a.top_k} (temperature comes with each request)", flush=True)
     ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(batcher, a.model)).serve_forever()
     return 0
 

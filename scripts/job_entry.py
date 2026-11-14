@@ -31,12 +31,12 @@ def sh(*cmd: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def install_libs() -> None:
+def install_libs(mode: str = "tests") -> None:
     shutil.rmtree(CODE, ignore_errors=True)
     shutil.copytree(MOUNT, CODE)
     py = sys.executable
     installer = [shutil.which("uv"), "pip", "install", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install"]
-    for lib in ("AgentTune", "AuditKIT"):
+    for lib in ("AgentTune", "AuditKIT") if mode == "tests" else ("AgentTune",):  # AuditKIT only for the test suite
         if (CODE / lib).is_dir():
             sh(*installer, "-e", str(CODE / lib))
     # Installed, not just on PYTHONPATH: the verifier's scorer runs in a subprocess with a clean environment and
@@ -49,7 +49,7 @@ def main() -> int:
     mode, rest = (sys.argv[1] if len(sys.argv) > 1 else "check"), sys.argv[2:]
     repo = CODE / "Harel-Lexsi"
     print(f"[job] mode={mode} mount={MOUNT} python={sys.version.split()[0]}", flush=True)
-    install_libs()
+    install_libs(mode)
     os.chdir(repo)
     sys.path.insert(0, str(repo / "scripts"))
     sys.path.insert(0, str(repo / "src"))
@@ -65,7 +65,7 @@ def main() -> int:
         return subprocess.call([sys.executable, "-m", "pytest", "tests", "-q", "-p", "no:cacheprovider"], cwd=repo)
     # A fresh interpreter: libraries installed a moment ago are not importable in this already-running process.
     if mode == "run":  # any script of the repo: job_entry.py run scripts/t8_collect.py --pilot
-        script, rest = rest[0], rest[1:]
+        script, rest = rest[0].removesuffix(".py") + ".py", rest[1:]  # sent without ".py": see hf_job.py
         if not (repo / script).is_file():
             print(f"[job] no such script in the repo: {script}", flush=True)
             return 2

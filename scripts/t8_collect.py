@@ -55,7 +55,7 @@ def worker(a: argparse.Namespace) -> int:
     jobs = json.loads((Path(a.out) / f"jobs_{a.worker}.json").read_text())
     sandbox = ShopSandbox()  # SHOP_DSN (this worker's database) is in the environment
     runner = EpisodeRunner(sandbox, base_url=f"http://127.0.0.1:{a.port}/v1", api_key="local", api_model=API_MODEL,
-                           max_steps=a.max_steps, temperature=a.temperature)
+                           max_steps=a.max_steps, max_new_tokens=a.max_new_tokens, temperature=a.temperature)
     score = verifier_scorer(SPEC)
     for tid, ep in jobs:
         task = tasks[tid]
@@ -109,13 +109,14 @@ def orchestrate(a: argparse.Namespace) -> int:
     out = Path(os.environ.get("OUT_DIR", ROOT / "runs")) / "t8" / name
     out.mkdir(parents=True, exist_ok=True)
     print(f"[t8] {name}: {len(chosen)} train tasks x {episodes} episodes = {len(chosen) * episodes} episodes, "
-          f"{workers} workers, temperature {a.temperature}; held-out tasks excluded: {sorted(held)}", flush=True)
+          f"{workers} workers, temperature {a.temperature}, top_p {a.top_p}, {a.max_new_tokens} new tokens a turn; held-out tasks excluded: {sorted(held)}", flush=True)
 
     t0 = time.time()
     train_t3.start_postgres(extra_databases=tuple(f"shop_{i}" for i in range(workers)))
     server_log = (out / "server.log").open("w")
     server = subprocess.Popen([sys.executable, str(ROOT / "scripts" / "serve_hf.py"), "--port", str(a.port),
-                               "--max-batch", str(a.max_batch)], stdout=server_log, stderr=subprocess.STDOUT)
+                               "--max-batch", str(a.max_batch), "--top-p", str(a.top_p)],
+                              stdout=server_log, stderr=subprocess.STDOUT)
     try:
         while health(a.port) is None:
             if server.poll() is not None:
@@ -135,7 +136,8 @@ def orchestrate(a: argparse.Namespace) -> int:
             env = {**os.environ, "SHOP_DSN": f"postgresql://shop:shop@localhost:5433/shop_{i}"}
             procs.append(subprocess.Popen(
                 [sys.executable, str(Path(__file__).resolve()), "--worker", str(i), "--out", str(out), "--port", str(a.port),
-                 "--max-steps", str(a.max_steps), "--temperature", str(a.temperature)], env=env))
+                 "--max-steps", str(a.max_steps), "--temperature", str(a.temperature),
+                 "--max-new-tokens", str(a.max_new_tokens)], env=env))
         t1, last = time.time(), 0.0
         while any(p.poll() is None for p in procs):
             time.sleep(5)
@@ -210,6 +212,8 @@ def main() -> int:
     p.add_argument("--max-batch", type=int, default=16)
     p.add_argument("--max-steps", type=int, default=8)
     p.add_argument("--temperature", type=float, default=0.9)
+    p.add_argument("--top-p", type=float, default=0.75, help="nucleus sampling, as the hosted provider (unrestricted drifts)")
+    p.add_argument("--max-new-tokens", type=int, default=768, help="per turn; a function is 300 to 600 tokens")
     p.add_argument("--timeout-min", type=float, default=150.0, help="stop sampling after this long and use what exists")
     a = p.parse_args()
     return worker(a) if a.worker is not None else orchestrate(a)

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "judge_model": "CohereLabs/c4ai-command-a-03-2025",
+    "base_url": "https://router.huggingface.co/v1",
+    "temperature": 0,
+    "approve_at": 0.5,
+    "rubric_sha256": "4ba14188564657281d2619f701a638f60ab64534f43aa0c46027b549473624dd",
+    "prompt_file": "judge_prompt_v1.txt",
+    "run": "hosted-tiny-aya-v3-t09-20261114"
+  },
+  "summary": {
+    "all": {
+      "n": 24,
+      "judge_unknown": 0,
+      "judge_approved": 13,
+      "approved_and_verified": 4,
+      "approved_but_failed_verifier": 9,
+      "rejected_but_verified": 0,
+      "verifier_pass": 4,
+      "verifier_fail": 20,
+      "visible_ok": 11
+    },
+    "train": {
+      "n": 16,
+      "judge_unknown": 0,
+      "judge_approved": 8,
+      "approved_and_verified": 3,
+      "approved_but_failed_verifier": 5,
+      "rejected_but_verified": 0,
+      "verifier_pass": 3,
+      "verifier_fail": 13,
+      "visible_ok": 7
+    },
+    "heldout": {
+      "n": 8,
+      "judge_unknown": 0,
+      "judge_approved": 5,
+      "approved_and_verified": 1,
+      "approved_but_failed_verifier": 4,
+      "rejected_but_verified": 0,
+      "verifier_pass": 1,
+      "verifier_fail": 7,
+      "visible_ok": 4
+    },
+    "by_judge_score": {
+      "1.00": {
+        "n": 4,
+        "verifier_pass": 4,
+        "verifier_fail": 0,
+        "verifier_unknown": 0
+      },
+      "0.50": {
+        "n": 9,
+        "verifier_pass": 0,
+        "verifier_fail": 9,
+        "verifier_unknown": 0
+      },
+      "0.00": {
+        "n": 11,
+        "verifier_pass": 0,
+        "verifier_fail": 11,
+        "verifier_unknown": 0
+      }
+    }
+  }
+}

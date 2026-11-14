@@ -47,14 +47,21 @@ class SandboxError(Exception):
 
 
 def task_for(prompt: str, tasks_dir: Path = TASKS) -> dict | None:
-    """The task record whose prompt is `prompt` (the rollout only carries the prompt), else None."""
+    """The task record for `prompt` (the rollout only carries the prompt), else None.
+
+    The prompt is the task's own text, or that text followed by more (the training prompt appends the tests and
+    the tables). The longest task prompt it starts with wins."""
     path = tasks_dir / "tasks.jsonl"
     if not path.is_file():
         return None
+    best = None
     for line in path.read_text().splitlines():
-        if line.strip() and (t := json.loads(line))["prompt"] == prompt:
-            return t
-    return None
+        if not line.strip():
+            continue
+        t = json.loads(line)
+        if prompt.startswith(t["prompt"]) and (best is None or len(t["prompt"]) > len(best["prompt"])):
+            best = t
+    return best
 
 
 def patch_start_for(prompt: str, tasks_dir: Path = TASKS) -> tuple[str, str] | None:

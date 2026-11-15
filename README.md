@@ -65,6 +65,7 @@ baseline, the hosted model for T2 and the pinned weights for T8, and a harness t
 | `src/harel_lexsi/factory/` | factory versions (G1), governor and frozen proposals (G2), L2 router (T7), deployment gate (T6) |
 | `src/harel_lexsi/tasks/`, `tasks/` | the 24-task set (13 implement, 11 patch) and its frozen train / held-out split |
 | `scripts/` | baseline, judge, the HF Jobs launcher (`hf_job.py`), a batching model server (`serve_hf.py`), the T8 chain (`t8_collect`, `t8_pairs`, `train_t8`, `t8_eval`), A2 (`a2_run`), the gate in a job (`gate_job`) |
+| `docs/report.html`, `docs/claims.md` | the single-file offline report (built by `scripts/build_report.py` from the run records) and the claims sheet mapping every claim to a ticket and a file |
 | `docs/` | the project report, decisions, rules written before each run, and run records with their raw data (`*-run/`) |
 
 ## Reproduce

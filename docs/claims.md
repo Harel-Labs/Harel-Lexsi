@@ -21,7 +21,7 @@ harness" or "any repo" claim and no adoption figure, so none needs a citation.
 | 11 | Broken handlers approved: verifier 0 of 19, judge 0 of 19 at score 1.0 (19 of 19 at 0.5) | A2 | `docs/a2-result.md`, `docs/a2-run/summary.json` |
 | 12 | Correct handlers approved: verifier 6 of 6, judge 2 of 6; the judge gave 0.5 to 23 of 25 items | A2 | `docs/a2-run/rows.jsonl` |
 | 13 | The factory-graph row (trigger, diff, expected, observed, decision) is generated from the records | G4 | `docs/factory-row.json`, `scripts/build_report.py` |
-| 14 | The verifier imports no model client and no AgentTune | V-series | `tests/` (import-guard test) |
+| 14 | The verifier imports no model client and no AgentTune | V-series | `tests/test_verifier.py::test_verifier_is_model_free` |
 | 15 | The adapter and the run data are public on Hugging Face under bhumiheda; hidden contracts are not published | K7 | `scripts/hf_publish.py`, README "On Hugging Face" |
 | 16 | Compute for the whole project was about $13 | T3, T8 | `docs/project-report.md` (an estimate from run times and published prices, not an invoice) |
 

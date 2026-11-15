@@ -1,0 +1,74 @@
+{
+  "kind": "model change (DPO adapter), not a prompt or memory proposal",
+  "trigger": {
+    "what": "baseline passes the visible tests more often than the verifier confirms",
+    "visible_pass": 11,
+    "verified": 4,
+    "of": 24,
+    "source": "docs/t2-baseline-run/summary.json"
+  },
+  "diff": {
+    "what": "LoRA adapter trained with DPO on verifier-labelled preference pairs, train split only",
+    "pairs": 303,
+    "rule": "strict",
+    "hyperparameters": {
+      "epochs": 2.0,
+      "lr": 2e-05,
+      "beta": 0.1,
+      "micro_batch": 1,
+      "grad_accum": 8,
+      "max_length": 6144,
+      "seed": 0,
+      "lora": {
+        "r": 16,
+        "alpha": 32,
+        "targets": "all-linear"
+      }
+    },
+    "held_out_in_training": false,
+    "pairs_summary": {
+      "pairs": 333,
+      "train_pairs": 303,
+      "eval_pairs": 30,
+      "tasks_with_pairs": 10,
+      "hard_negative_share": 0.045,
+      "invalid_share": 0.087,
+      "go": true
+    },
+    "source": "docs/t8-run/adapter_provenance.json"
+  },
+  "expected": {
+    "what": "held-out verified success rises by at least +0.10 and the patch-task rate does not fall (rule written before the trained model answered)",
+    "min_heldout_gain": 0.1,
+    "max_mutation_regression": 0.0,
+    "source": "docs/t8-plan.md"
+  },
+  "observed": {
+    "heldout_verified": {
+      "base": 0.125,
+      "trained": 0.125,
+      "n": 8,
+      "p_value": 1.0
+    },
+    "heldout_visible": {
+      "base": 0.45,
+      "trained": 0.55
+    },
+    "patch_tasks_verified": {
+      "n": 11,
+      "base": 0.34545454545454546,
+      "new": 0.34545454545454546,
+      "delta": 0.0,
+      "p_value": 1.0,
+      "significant": false
+    },
+    "source": "docs/t8-run/eval_summary.json"
+  },
+  "decision": {
+    "decision": "keep_old",
+    "reasons": [
+      "held-out gain +0% is below the required +10%"
+    ],
+    "source": "docs/t8-run/gate_decision.json"
+  }
+}

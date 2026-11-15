@@ -117,6 +117,16 @@ explain their own usage at the top of each file.
 - The verifier imports no model client or AgentTune (a test guards it). AgentTune and AuditKIT are noncommercial and live
   only behind the adapters.
 
+## On Hugging Face
+
+| | |
+|---|---|
+| Collection | [Harel: verifier-gated fine-tuning](https://huggingface.co/collections/bhumiheda/harel-verifier-gated-fine-tuning-6af9eef871680167f708585f) |
+| Model | [bhumiheda/harel-tiny-aya-dpo-lora](https://huggingface.co/bhumiheda/harel-tiny-aya-dpo-lora): the T8 DPO LoRA adapter with its provenance. It did not improve held-out verified success and was not deployed; the model card says so first |
+| Dataset | [bhumiheda/harel-shop-verifier-runs](https://huggingface.co/datasets/bhumiheda/harel-shop-verifier-runs): T2 baseline trajectories, the T8 collection, pairs and evaluation, A1, A2, the gate log and the task set (no hidden contracts) |
+
+Published with `scripts/hf_publish.py` (it refuses to upload anything containing hidden-contract text or a token).
+
 ## Models and tools
 
 Builder: `CohereLabs/tiny-aya-global` (Cohere Labs, dense, open weights). Judge baseline: `CohereLabs/c4ai-command-a-03-2025`
